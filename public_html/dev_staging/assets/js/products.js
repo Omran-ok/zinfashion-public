@@ -1,6 +1,6 @@
 /**
  * ZIN Fashion - Products Handler
- * Location: /public_html/dev/assets/js/products.js
+ * Location: /public_html/dev_staging/assets/js/products.js
  */
 
 // Products Manager
@@ -20,7 +20,10 @@ const productsManager = {
         // Filter tabs
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                document.querySelector('.filter-tab.active').classList.remove('active');
+                const activeTab = document.querySelector('.filter-tab.active');
+                if (activeTab) {
+                    activeTab.classList.remove('active');
+                }
                 e.target.classList.add('active');
                 this.currentFilter = e.target.dataset.filter;
                 this.currentPage = 1;
@@ -44,23 +47,23 @@ const productsManager = {
 
         const productGrid = document.getElementById('productGrid');
         
-        if (!append) {
+        if (!append && productGrid) {
             productGrid.innerHTML = '<div class="loading">Produkte werden geladen...</div>';
         }
 
         try {
             const params = new URLSearchParams({
-                action: 'get_products',
+                api: 'products',
                 page: this.currentPage,
                 filter: this.currentFilter,
                 category: this.currentCategory,
                 subcategory: this.currentSubcategory
             });
 
-            const response = await fetch(`includes/api.php?${params}`);
+            const response = await fetch(`api.php?${params}`);
             const data = await response.json();
 
-            if (data.success) {
+            if (data.success && productGrid) {
                 if (!append) {
                     productGrid.innerHTML = '';
                 } else {
@@ -85,18 +88,17 @@ const productsManager = {
                     loadMoreBtn.style.display = 
                         this.currentPage >= data.data.pages ? 'none' : 'block';
                 }
-            } else {
-                productGrid.innerHTML = `<div class="error">Fehler beim Laden der Produkte: ${data.message}</div>`;
+            } else if (!data.success && productGrid) {
+                productGrid.innerHTML = `<div class="error">Fehler beim Laden der Produkte</div>`;
             }
         } catch (error) {
             console.error('Error loading products:', error);
             
-            // Since no products exist yet, show a friendly message
-            if (!append) {
+            if (productGrid) {
                 productGrid.innerHTML = `
                     <div class="no-products">
-                        <p>Noch keine Produkte verfügbar.</p>
-                        <p>Neue Produkte kommen bald!</p>
+                        <p>Fehler beim Laden der Produkte.</p>
+                        <p>Bitte versuchen Sie es später erneut.</p>
                     </div>
                 `;
             }
@@ -109,13 +111,12 @@ const productsManager = {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        const badge = product.is_featured ? '<span class="product-badge">Bestseller</span>' : 
-                     product.has_sale ? '<span class="product-badge sale">Sale</span>' : 
-                     '';
+        const badge = product.badge_text ? 
+            `<span class="product-badge ${product.badge}">${product.badge_text}</span>` : '';
 
         card.innerHTML = `
             <div class="product-image">
-                <img src="${product.image}" alt="${product.product_name}" loading="lazy">
+                <img src="${product.image || '/assets/images/placeholder.jpg'}" alt="${product.product_name}" loading="lazy">
                 ${badge}
                 <div class="product-actions">
                     <button class="action-btn wishlist-btn" data-product-id="${product.product_id}">
@@ -148,33 +149,122 @@ const productsManager = {
         const quickViewBtn = card.querySelector('.quick-view-btn');
         const addToCartBtn = card.querySelector('.add-to-cart');
 
-        wishlistBtn.addEventListener('click', () => this.addToWishlist(product.product_id));
-        quickViewBtn.addEventListener('click', () => this.showQuickView(product.product_id));
-        addToCartBtn.addEventListener('click', () => this.addToCart(product.product_id));
+        if (wishlistBtn) {
+            wishlistBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleWishlist(product.product_id, wishlistBtn);
+            });
+        }
+
+        if (quickViewBtn) {
+            quickViewBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof openQuickView === 'function') {
+                    openQuickView(product.product_id);
+                } else {
+                    this.showQuickView(product.product_id);
+                }
+            });
+        }
+
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof addToCart === 'function') {
+                    addToCart(product.product_id, 1);
+                } else {
+                    this.addToCart(product.product_id);
+                }
+            });
+        }
 
         return card;
     },
 
-    addToWishlist(productId) {
-        console.log('Add to wishlist:', productId);
-        // Implement wishlist functionality
+    async toggleWishlist(productId, button) {
+        const isInWishlist = button.classList.contains('active');
+        
+        try {
+            const response = await fetch(`api.php?api=wishlist${isInWishlist ? '&product_id=' + productId : ''}`, {
+                method: isInWishlist ? 'DELETE' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: isInWishlist ? null : JSON.stringify({
+                    product_id: productId
+                })
+            });
+            
+            if (response.ok) {
+                button.classList.toggle('active');
+                const data = await response.json();
+                
+                // Show notification if function exists
+                if (typeof showCartNotification === 'function') {
+                    showCartNotification(
+                        isInWishlist ? 'Removed from wishlist' : 'Added to wishlist',
+                        'success'
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Wishlist error:', error);
+        }
     },
 
     showQuickView(productId) {
         console.log('Show quick view:', productId);
-        // Implement quick view modal
+        // Quick view modal implementation
+        // This will be handled by cart.js if it exists
     },
 
-    addToCart(productId) {
-        console.log('Add to cart:', productId);
-        // Implement add to cart functionality
-        if (typeof cartManager !== 'undefined') {
-            cartManager.addItem(productId);
+    async addToCart(productId) {
+        try {
+            const response = await fetch('api.php?api=cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Update cart count if element exists
+                const cartCount = document.querySelector('.cart-count');
+                if (cartCount) {
+                    const currentCount = parseInt(cartCount.textContent) || 0;
+                    cartCount.textContent = currentCount + 1;
+                    cartCount.style.display = 'flex';
+                }
+                
+                // Open cart if function exists
+                if (typeof openCart === 'function') {
+                    openCart();
+                }
+                
+                // Show notification if function exists
+                if (typeof showCartNotification === 'function') {
+                    showCartNotification('Product added to cart!', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
         }
     }
 };
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    productsManager.init();
+    // Only initialize if we have a product grid on the page
+    if (document.getElementById('productGrid')) {
+        productsManager.init();
+    }
 });
+
+// Export for global use
+window.productsManager = productsManager;
