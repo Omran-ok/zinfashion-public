@@ -53,7 +53,6 @@ $lang = $_COOKIE['lang'] ?? 'de';
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
-    <link rel="alternate icon" href="assets/images/favicon.ico">
 </head>
 <body>
     <!-- Header -->
@@ -389,7 +388,7 @@ $lang = $_COOKIE['lang'] ?? 'de';
                 <p class="newsletter-text" data-i18n="newsletter-text">Melden Sie sich für unseren Newsletter an und erhalten Sie 10% Rabatt auf Ihre erste Bestellung</p>
                 <form class="newsletter-form" id="newsletterForm">
                     <input type="email" class="newsletter-input" placeholder="Ihre E-Mail-Adresse" required>
-                    <button type="submit" class="btn btn-primary" data-i18n="subscribe" style="background: #000000 !important; color: #D4AF37 !important; border: 2px solid #D4AF37 !important;"> data-i18n="subscribe">Abonnieren</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="subscribe" style="background: #000000 !important; color: #D4AF37 !important; border: 2px solid #D4AF37 !important;">Abonnieren</button>
                 </form>
                 <p class="newsletter-privacy" data-i18n="privacy-note">
                     Wir respektieren Ihre Privatsphäre. Keine Spam-Mails.
@@ -479,6 +478,19 @@ $lang = $_COOKIE['lang'] ?? 'de';
     <script src="assets/js/translations.js"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/cart.js"></script>
-    <script src="assets/js/products.js"></script>
+    <script src="assets/js/products-v2.js"></script>
+    
+    <!-- Force products initialization after page load -->
+    <script>
+    // Ensure products load after all scripts are ready
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            if (typeof productsManager !== 'undefined' && document.getElementById('productGrid')) {
+                console.log('Initializing products...');
+                productsManager.init();
+            }
+        }, 100);
+    });
+    </script>
 </body>
 </html>
