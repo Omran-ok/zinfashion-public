@@ -7,11 +7,12 @@
 const productsManager = {
     currentPage: 1,
     currentFilter: 'all',
-    currentCategory: '',
-    currentSubcategory: '',
+    currentCategory: null,
+    currentSubcategory: null,
     isLoading: false,
 
     init() {
+        console.log('ProductsManager initializing...');
         this.bindEvents();
         this.loadProducts();
     },
@@ -42,12 +43,22 @@ const productsManager = {
     },
 
     async loadProducts(append = false) {
-        if (this.isLoading) return;
+        console.log('loadProducts called, append:', append, 'currentFilter:', this.currentFilter);
+        if (this.isLoading) {
+            console.log('Already loading, skipping...');
+            return;
+        }
         this.isLoading = true;
 
         const productGrid = document.getElementById('productGrid');
         
-        if (!append && productGrid) {
+        if (!productGrid) {
+            console.error('Product grid not found');
+            this.isLoading = false;
+            return;
+        }
+        
+        if (!append) {
             productGrid.innerHTML = '<div class="loading">Produkte werden geladen...</div>';
         }
 
@@ -55,15 +66,27 @@ const productsManager = {
             const params = new URLSearchParams({
                 api: 'products',
                 page: this.currentPage,
-                filter: this.currentFilter,
-                category: this.currentCategory,
-                subcategory: this.currentSubcategory
+                filter: this.currentFilter
             });
 
-            const response = await fetch(`api.php?${params}`);
-            const data = await response.json();
+            // Only add category/subcategory if they have actual values
+            if (this.currentCategory && this.currentCategory !== '') {
+                params.append('category', this.currentCategory);
+            }
+            
+            if (this.currentSubcategory && this.currentSubcategory !== '') {
+                params.append('subcategory', this.currentSubcategory);
+            }
 
-            if (data.success && productGrid) {
+            const url = `/api.php?${params}`;
+            console.log('Fetching from:', url);
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            console.log('API response:', data);
+
+            if (data.success) {
                 if (!append) {
                     productGrid.innerHTML = '';
                 } else {
@@ -72,36 +95,35 @@ const productsManager = {
                     if (loading) loading.remove();
                 }
 
-                if (data.data.products.length === 0) {
-                    if (!append) {
-                        productGrid.innerHTML = '<div class="no-products">Keine Produkte gefunden</div>';
-                    }
-                } else {
+                if (data.data && data.data.products && data.data.products.length > 0) {
+                    console.log(`Adding ${data.data.products.length} products to grid`);
                     data.data.products.forEach(product => {
                         productGrid.appendChild(this.createProductCard(product));
                     });
+                } else {
+                    if (!append) {
+                        productGrid.innerHTML = '<div class="no-products">Keine Produkte gefunden</div>';
+                    }
                 }
 
                 // Show/hide load more button
                 const loadMoreBtn = document.querySelector('.load-more button');
                 if (loadMoreBtn) {
                     loadMoreBtn.style.display = 
-                        this.currentPage >= data.data.pages ? 'none' : 'block';
+                        this.currentPage >= (data.data.pages || 1) ? 'none' : 'block';
                 }
-            } else if (!data.success && productGrid) {
+            } else {
                 productGrid.innerHTML = `<div class="error">Fehler beim Laden der Produkte</div>`;
             }
         } catch (error) {
             console.error('Error loading products:', error);
             
-            if (productGrid) {
-                productGrid.innerHTML = `
-                    <div class="no-products">
-                        <p>Fehler beim Laden der Produkte.</p>
-                        <p>Bitte versuchen Sie es später erneut.</p>
-                    </div>
-                `;
-            }
+            productGrid.innerHTML = `
+                <div class="no-products">
+                    <p>Fehler beim Laden der Produkte.</p>
+                    <p>Bitte versuchen Sie es später erneut.</p>
+                </div>
+            `;
         } finally {
             this.isLoading = false;
         }
@@ -112,7 +134,7 @@ const productsManager = {
         card.className = 'product-card';
         
         const badge = product.badge_text ? 
-            `<span class="product-badge ${product.badge}">${product.badge_text}</span>` : '';
+            `<span class="product-badge ${product.badge || ''}">${product.badge_text}</span>` : '';
 
         card.innerHTML = `
             <div class="product-image">
@@ -152,7 +174,11 @@ const productsManager = {
         if (wishlistBtn) {
             wishlistBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.toggleWishlist(product.product_id, wishlistBtn);
+                if (typeof toggleWishlist === 'function') {
+                    toggleWishlist(product.product_id, wishlistBtn);
+                } else {
+                    this.toggleWishlist(product.product_id, wishlistBtn);
+                }
             });
         }
 
@@ -185,7 +211,11 @@ const productsManager = {
         const isInWishlist = button.classList.contains('active');
         
         try {
-            const response = await fetch(`api.php?api=wishlist${isInWishlist ? '&product_id=' + productId : ''}`, {
+            const url = isInWishlist 
+                ? `/api.php?api=wishlist&product_id=${productId}`
+                : '/api.php?api=wishlist';
+                
+            const response = await fetch(url, {
                 method: isInWishlist ? 'DELETE' : 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -197,9 +227,7 @@ const productsManager = {
             
             if (response.ok) {
                 button.classList.toggle('active');
-                const data = await response.json();
                 
-                // Show notification if function exists
                 if (typeof showCartNotification === 'function') {
                     showCartNotification(
                         isInWishlist ? 'Removed from wishlist' : 'Added to wishlist',
@@ -214,13 +242,12 @@ const productsManager = {
 
     showQuickView(productId) {
         console.log('Show quick view:', productId);
-        // Quick view modal implementation
         // This will be handled by cart.js if it exists
     },
 
     async addToCart(productId) {
         try {
-            const response = await fetch('api.php?api=cart', {
+            const response = await fetch('/api.php?api=cart', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -232,8 +259,6 @@ const productsManager = {
             });
             
             if (response.ok) {
-                const data = await response.json();
-                
                 // Update cart count if element exists
                 const cartCount = document.querySelector('.cart-count');
                 if (cartCount) {
@@ -262,6 +287,7 @@ const productsManager = {
 document.addEventListener('DOMContentLoaded', () => {
     // Only initialize if we have a product grid on the page
     if (document.getElementById('productGrid')) {
+        console.log('Product grid found, initializing productsManager...');
         productsManager.init();
     }
 });
