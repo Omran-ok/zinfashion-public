@@ -1,6 +1,6 @@
 /**
- * ZIN Fashion - Products Handler
- * Location: /public_html/dev_staging/assets/js/products.js
+ * ZIN Fashion - Products Handler with Translation Support
+ * Location: /public_html/dev_staging/assets/js/products-v2.js
  */
 
 // Products Manager
@@ -15,6 +15,29 @@ const productsManager = {
         console.log('ProductsManager initializing...');
         this.bindEvents();
         this.loadProducts();
+        
+        // Listen for language changes
+        this.setupLanguageListener();
+    },
+
+    setupLanguageListener() {
+        // Re-render products when language changes
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Small delay to let translations update
+                setTimeout(() => {
+                    this.reloadCurrentProducts();
+                }, 100);
+            });
+        });
+    },
+
+    reloadCurrentProducts() {
+        // Reload products with current filter to update translations
+        const productGrid = document.getElementById('productGrid');
+        if (productGrid && productGrid.children.length > 0) {
+            this.loadProducts(false);
+        }
     },
 
     bindEvents() {
@@ -58,8 +81,12 @@ const productsManager = {
             return;
         }
         
+        // Get current language for loading message
+        const lang = localStorage.getItem('lang') || 'de';
+        const loadingText = this.getTranslation('loading', lang);
+        
         if (!append) {
-            productGrid.innerHTML = '<div class="loading">Produkte werden geladen...</div>';
+            productGrid.innerHTML = `<div class="loading">${loadingText}...</div>`;
         }
 
         try {
@@ -102,7 +129,8 @@ const productsManager = {
                     });
                 } else {
                     if (!append) {
-                        productGrid.innerHTML = '<div class="no-products">Keine Produkte gefunden</div>';
+                        const noProductsText = this.getTranslation('no-products', lang);
+                        productGrid.innerHTML = `<div class="no-products">${noProductsText}</div>`;
                     }
                 }
 
@@ -113,15 +141,19 @@ const productsManager = {
                         this.currentPage >= (data.data.pages || 1) ? 'none' : 'block';
                 }
             } else {
-                productGrid.innerHTML = `<div class="error">Fehler beim Laden der Produkte</div>`;
+                const errorText = this.getTranslation('error-loading', lang);
+                productGrid.innerHTML = `<div class="error">${errorText}</div>`;
             }
         } catch (error) {
             console.error('Error loading products:', error);
+            const lang = localStorage.getItem('lang') || 'de';
+            const errorText = this.getTranslation('error-loading', lang);
+            const tryAgainText = this.getTranslation('try-again', lang);
             
             productGrid.innerHTML = `
                 <div class="no-products">
-                    <p>Fehler beim Laden der Produkte.</p>
-                    <p>Bitte versuchen Sie es später erneut.</p>
+                    <p>${errorText}</p>
+                    <p>${tryAgainText}</p>
                 </div>
             `;
         } finally {
@@ -133,20 +165,50 @@ const productsManager = {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        const badge = product.badge_text ? 
-            `<span class="product-badge ${product.badge || ''}">${product.badge_text}</span>` : '';
+        // Get current language
+        const lang = localStorage.getItem('lang') || 'de';
+        
+        // Get translated product name based on language
+        let productName = product.product_name; // Default German
+        if (lang === 'en' && product.product_name_en) {
+            productName = product.product_name_en;
+        } else if (lang === 'ar' && product.product_name_ar) {
+            productName = product.product_name_ar;
+        }
+        
+        // Get translations for UI elements
+        const addToCartText = this.getTranslation('add-to-cart', lang);
+        const quickViewText = this.getTranslation('quick-view', lang);
+        const addToWishlistText = this.getTranslation('add-to-wishlist', lang);
+        
+        // Handle badge translation
+        let badgeText = '';
+        if (product.badge_text) {
+            if (product.badge === 'new') {
+                badgeText = this.getTranslation('new', lang);
+            } else if (product.badge === 'sale') {
+                badgeText = product.badge_text; // Keep percentage
+            } else if (product.badge === 'bestseller') {
+                badgeText = this.getTranslation('bestseller', lang);
+            } else {
+                badgeText = product.badge_text;
+            }
+        }
+        
+        const badge = badgeText ? 
+            `<span class="product-badge ${product.badge || ''}">${badgeText}</span>` : '';
 
         card.innerHTML = `
             <div class="product-image">
-                <img src="${product.image || '/assets/images/placeholder.jpg'}" alt="${product.product_name}" loading="lazy">
+                <img src="${product.image || '/assets/images/placeholder.jpg'}" alt="${productName}" loading="lazy">
                 ${badge}
                 <div class="product-actions">
-                    <button class="action-btn wishlist-btn" data-product-id="${product.product_id}">
+                    <button class="action-btn wishlist-btn" data-product-id="${product.product_id}" title="${addToWishlistText}">
                         <svg class="icon" viewBox="0 0 24 24">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                         </svg>
                     </button>
-                    <button class="action-btn quick-view-btn" data-product-id="${product.product_id}">
+                    <button class="action-btn quick-view-btn" data-product-id="${product.product_id}" title="${quickViewText}">
                         <svg class="icon" viewBox="0 0 24 24">
                             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                         </svg>
@@ -154,14 +216,14 @@ const productsManager = {
                 </div>
             </div>
             <div class="product-info">
-                <h3 class="product-name">${product.product_name}</h3>
+                <h3 class="product-name">${productName}</h3>
                 <div class="product-price">
                     ${product.has_sale ? 
                         `<span class="old-price">${product.formatted_regular_price}</span>` : ''}
                     <span class="price">${product.formatted_price}</span>
                 </div>
                 <button class="add-to-cart" data-product-id="${product.product_id}">
-                    In den Warenkorb
+                    ${addToCartText}
                 </button>
             </div>
         `;
@@ -207,6 +269,65 @@ const productsManager = {
         return card;
     },
 
+    getTranslation(key, lang = null) {
+        // Get language if not provided
+        if (!lang) {
+            lang = localStorage.getItem('lang') || 'de';
+        }
+        
+        // Try to get translation from global translations object
+        if (typeof translations !== 'undefined' && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        
+        // Fallback translations for critical UI elements
+        const fallbackTranslations = {
+            'de': {
+                'add-to-cart': 'In den Warenkorb',
+                'quick-view': 'Schnellansicht',
+                'add-to-wishlist': 'Zur Wunschliste hinzufügen',
+                'new': 'NEU',
+                'bestseller': 'BESTSELLER',
+                'sale': 'SALE',
+                'loading': 'Produkte werden geladen',
+                'no-products': 'Keine Produkte gefunden',
+                'error-loading': 'Fehler beim Laden der Produkte',
+                'try-again': 'Bitte versuchen Sie es später erneut'
+            },
+            'en': {
+                'add-to-cart': 'Add to Cart',
+                'quick-view': 'Quick View',
+                'add-to-wishlist': 'Add to Wishlist',
+                'new': 'NEW',
+                'bestseller': 'BESTSELLER',
+                'sale': 'SALE',
+                'loading': 'Loading products',
+                'no-products': 'No products found',
+                'error-loading': 'Error loading products',
+                'try-again': 'Please try again later'
+            },
+            'ar': {
+                'add-to-cart': 'أضف إلى السلة',
+                'quick-view': 'عرض سريع',
+                'add-to-wishlist': 'أضف إلى قائمة الأمنيات',
+                'new': 'جديد',
+                'bestseller': 'الأكثر مبيعاً',
+                'sale': 'تخفيضات',
+                'loading': 'جاري تحميل المنتجات',
+                'no-products': 'لا توجد منتجات',
+                'error-loading': 'خطأ في تحميل المنتجات',
+                'try-again': 'يرجى المحاولة مرة أخرى لاحقاً'
+            }
+        };
+        
+        if (fallbackTranslations[lang] && fallbackTranslations[lang][key]) {
+            return fallbackTranslations[lang][key];
+        }
+        
+        // Return the key if no translation found
+        return key;
+    },
+
     async toggleWishlist(productId, button) {
         const isInWishlist = button.classList.contains('active');
         
@@ -228,11 +349,13 @@ const productsManager = {
             if (response.ok) {
                 button.classList.toggle('active');
                 
+                const lang = localStorage.getItem('lang') || 'de';
+                const message = isInWishlist ? 
+                    this.getTranslation('removed-from-wishlist', lang) : 
+                    this.getTranslation('added-to-wishlist', lang);
+                
                 if (typeof showCartNotification === 'function') {
-                    showCartNotification(
-                        isInWishlist ? 'Removed from wishlist' : 'Added to wishlist',
-                        'success'
-                    );
+                    showCartNotification(message, 'success');
                 }
             }
         } catch (error) {
@@ -273,8 +396,11 @@ const productsManager = {
                 }
                 
                 // Show notification if function exists
+                const lang = localStorage.getItem('lang') || 'de';
+                const message = this.getTranslation('added-to-cart', lang);
+                
                 if (typeof showCartNotification === 'function') {
-                    showCartNotification('Product added to cart!', 'success');
+                    showCartNotification(message, 'success');
                 }
             }
         } catch (error) {
