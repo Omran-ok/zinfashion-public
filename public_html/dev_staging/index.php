@@ -14,7 +14,7 @@ if (isset($_GET['api'])) {
 }
 
 // Get user preferences
-$theme = $_COOKIE['theme'] ?? 'light';
+$theme = $_COOKIE['theme'] ?? 'dark';
 $lang = $_COOKIE['lang'] ?? 'de';
 ?>
 <!DOCTYPE html>
@@ -478,7 +478,7 @@ $lang = $_COOKIE['lang'] ?? 'de';
     <script src="assets/js/translations.js"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/cart.js"></script>
-    <script src="assets/js/products-v2.js"></script>
+    <script src="assets/js/products-v2.js?v=<?= filemtime('assets/js/products-v2.js') ?>"></script>
     
     <!-- Force products initialization after page load -->
     <script>
