@@ -18,7 +18,7 @@ function initializeApp() {
     initializeNavigation();
     initializeSearch();
     initializeHeroSlider();
-    initializeAnimations();
+    // // initializeAnimations(); // Fixed - function does not exist // Commented out - function doesn't exist
     initializeNewsletter();
     
     // Load initial data
@@ -211,8 +211,8 @@ function performSearch(query) {
     // Show loading state
     showLoading();
     
-    // Simulate API call
-    fetch(`?api=search&q=${encodeURIComponent(query)}`)
+    // API call
+    fetch(`/api.php?api=search&q=${encodeURIComponent(query)}`)
         .then(response => response.json())
         .then(data => {
             // Handle search results
@@ -293,3 +293,84 @@ function initializeHeroSlider() {
         heroSection.addEventListener('mouseleave', startAutoPlay);
     }
 }
+
+/**
+ * Initialize Newsletter
+ */
+function initializeNewsletter() {
+    const form = document.getElementById('newsletterForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const emailInput = form.querySelector('input[type="email"]');
+            const email = emailInput.value;
+            
+            if (!email) return;
+            
+            // Send to API
+            fetch('/api.php?api=newsletter', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Thank you for subscribing!');
+                    emailInput.value = '';
+                } else {
+                    alert(data.error || 'Subscription failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Newsletter error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+}
+
+/**
+ * Load Categories
+ */
+function loadCategories() {
+    fetch('/api.php?api=categories')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Categories loaded:', data);
+        })
+        .catch(error => {
+            console.error('Error loading categories:', error);
+        });
+}
+
+/**
+ * Load Products
+ */
+function loadProducts() {
+    // This is handled by products.js if product grid exists
+    if (document.getElementById('productGrid')) {
+        console.log('Product grid found, products.js will handle loading');
+    }
+}
+
+/**
+ * Show Loading
+ */
+function showLoading() {
+    // Implement loading indicator
+}
+
+/**
+ * Hide Loading
+ */
+function hideLoading() {
+    // Hide loading indicator
+}
+
+// Make certain functions globally available
+window.updateTranslations = updateTranslations;
+window.performSearch = performSearch;
