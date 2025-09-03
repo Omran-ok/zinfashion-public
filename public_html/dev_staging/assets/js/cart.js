@@ -1,6 +1,6 @@
 /**
  * ZIN Fashion - Cart Management
- * Location: /public_html/dev/assets/js/cart.js
+ * Location: /public_html/dev_staging/assets/js/cart.js
  */
 
 // Cart state
@@ -54,7 +54,7 @@ function initializeCartEvents() {
  */
 async function loadCart() {
     try {
-        const response = await fetch('?api=cart');
+        const response = await fetch('/api.php?api=cart');
         if (response.ok) {
             const data = await response.json();
             cart = data;
@@ -71,7 +71,7 @@ async function loadCart() {
  */
 async function loadWishlist() {
     try {
-        const response = await fetch('?api=wishlist');
+        const response = await fetch('/api.php?api=wishlist');
         if (response.ok) {
             const data = await response.json();
             wishlist = data.items || [];
@@ -88,7 +88,7 @@ async function loadWishlist() {
  */
 async function addToCart(productId, quantity = 1) {
     try {
-        const response = await fetch('?api=cart', {
+        const response = await fetch('/api.php?api=cart', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ async function updateCartItem(itemId, quantity) {
     }
     
     try {
-        const response = await fetch('?api=cart', {
+        const response = await fetch('/api.php?api=cart', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -153,7 +153,7 @@ async function updateCartItem(itemId, quantity) {
  */
 async function removeFromCart(itemId) {
     try {
-        const response = await fetch(`?api=cart?item_id=${itemId}`, {
+        const response = await fetch(`/api.php?api=cart&item_id=${itemId}`, {
             method: 'DELETE'
         });
         
@@ -173,7 +173,11 @@ async function toggleWishlist(productId, button) {
     const isInWishlist = button.classList.contains('active');
     
     try {
-        const response = await fetch(`?api=wishlist${isInWishlist ? `?product_id=${productId}` : ''}`, {
+        const url = isInWishlist 
+            ? `/api.php?api=wishlist&product_id=${productId}`
+            : '/api.php?api=wishlist';
+            
+        const response = await fetch(url, {
             method: isInWishlist ? 'DELETE' : 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -236,12 +240,17 @@ function renderCart() {
     if (!cartModal) return;
     
     const lang = localStorage.getItem('lang') || 'de';
-    const t = (key) => window.ZINFashion?.getTranslation(key) || key;
+    const t = (key) => {
+        if (typeof translations !== 'undefined' && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        return key;
+    };
     
     if (cart.items && cart.items.length > 0) {
         cartModal.innerHTML = `
             <div class="cart-header">
-                <h2 class="cart-title">${t('cart-title')}</h2>
+                <h2 class="cart-title">${t('shopping-cart')}</h2>
                 <button class="cart-close" onclick="closeCart()">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -279,7 +288,7 @@ function renderCart() {
     } else {
         cartModal.innerHTML = `
             <div class="cart-header">
-                <h2 class="cart-title">${t('cart-title')}</h2>
+                <h2 class="cart-title">${t('shopping-cart')}</h2>
                 <button class="cart-close" onclick="closeCart()">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -306,12 +315,18 @@ function renderCart() {
  * Render Cart Item
  */
 function renderCartItem(item) {
-    const t = (key) => window.ZINFashion?.getTranslation(key) || key;
+    const t = (key) => {
+        const lang = localStorage.getItem('lang') || 'de';
+        if (typeof translations !== 'undefined' && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        return key;
+    };
     
     return `
         <div class="cart-item" data-item-id="${item.cart_item_id}">
             <div class="cart-item-image">
-                <img src="${item.image_url || 'assets/images/placeholder.jpg'}" alt="${item.product_name}">
+                <img src="${item.image_url || '/assets/images/placeholder.jpg'}" alt="${item.product_name}">
             </div>
             <div class="cart-item-details">
                 <h4 class="cart-item-name">${item.product_name}</h4>
@@ -340,7 +355,7 @@ function renderCartItem(item) {
  */
 function updateCartUI() {
     updateCartCount();
-    if (document.getElementById('cartModal').classList.contains('active')) {
+    if (document.getElementById('cartModal') && document.getElementById('cartModal').classList.contains('active')) {
         renderCart();
     }
 }
@@ -425,7 +440,7 @@ function goToCheckout() {
  */
 async function openQuickView(productId) {
     try {
-        const response = await fetch(`?api=product&id=${productId}`);
+        const response = await fetch(`/api.php?api=product&id=${productId}`);
         if (response.ok) {
             const product = await response.json();
             renderQuickView(product);
@@ -442,7 +457,13 @@ function renderQuickView(product) {
     const modal = document.getElementById('quickViewModal');
     if (!modal) return;
     
-    const t = (key) => window.ZINFashion?.getTranslation(key) || key;
+    const t = (key) => {
+        const lang = localStorage.getItem('lang') || 'de';
+        if (typeof translations !== 'undefined' && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        return key;
+    };
     
     modal.innerHTML = `
         <div class="modal-content">
@@ -454,7 +475,7 @@ function renderQuickView(product) {
             
             <div class="quick-view-content">
                 <div class="quick-view-images">
-                    <img src="${product.image_url || 'assets/images/placeholder.jpg'}" alt="${product.product_name}">
+                    <img src="${product.image_url || '/assets/images/placeholder.jpg'}" alt="${product.product_name}">
                 </div>
                 
                 <div class="quick-view-info">
@@ -557,3 +578,4 @@ window.goToCheckout = goToCheckout;
 window.increaseQuickViewQuantity = increaseQuickViewQuantity;
 window.decreaseQuickViewQuantity = decreaseQuickViewQuantity;
 window.addToCartFromQuickView = addToCartFromQuickView;
+window.showCartNotification = showCartNotification;
