@@ -250,6 +250,10 @@ $products = $stmt->fetchAll();
                                                class="btn btn-danger btn-sm" title="<?= __('delete') ?>">
                                                 <i class="fas fa-trash"></i>
                                             </a>
+                                            <a href="product-images.php?id=<?= $product['product_id'] ?>" 
+                                               class="btn btn-info btn-sm" title="Manage Images">
+                                                <i class="fas fa-images"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
