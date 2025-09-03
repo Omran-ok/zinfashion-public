@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// API Handler File
+// API Handler File - Fixed Badge Logic
 // Location: /public_html/dev_staging/includes/api.php
 // ===================================
 
@@ -100,7 +100,8 @@ function handleProducts($pdo) {
     $limit = PRODUCTS_PER_PAGE;
     $offset = ($page - 1) * $limit;
     
-    $sql = "SELECT p.*, c.category_name, c.slug as category_slug,
+    // Include multilingual product names in the query
+    $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, c.category_name, c.slug as category_slug,
             (SELECT pi.image_url FROM product_images pi 
              WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
             FROM products p
@@ -115,16 +116,16 @@ function handleProducts($pdo) {
         $params['category'] = $category;
     }
     
-    // Additional filters
+    // Additional filters - FIX: Only filter by badge, don't override it
     switch ($filter) {
         case 'new':
-            $sql .= " AND p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            $sql .= " AND p.badge = 'new'";
             break;
         case 'sale':
-            $sql .= " AND p.sale_price IS NOT NULL AND p.sale_price > 0";
+            $sql .= " AND p.badge = 'sale'";
             break;
         case 'bestseller':
-            $sql .= " AND p.is_featured = 1";
+            $sql .= " AND p.badge = 'bestseller'";
             break;
     }
     
@@ -163,25 +164,44 @@ function handleProducts($pdo) {
         
         // Format prices for display
         $product['formatted_price'] = '€' . number_format($product['base_price'], 2, ',', '.');
+        $product['has_sale'] = false;
         
-        if ($product['sale_price']) {
+        if ($product['sale_price'] && $product['sale_price'] > 0) {
             $product['formatted_regular_price'] = '€' . number_format($product['base_price'], 2, ',', '.');
             $product['formatted_price'] = '€' . number_format($product['sale_price'], 2, ',', '.');
             $product['has_sale'] = true;
             $product['old_price'] = $product['base_price'];
         }
         
-        // Add badge
-        if ($product['badge'] === 'new' || (time() - strtotime($product['created_at']) < 30 * 24 * 3600)) {
-            $product['badge'] = 'new';
-            $product['badge_text'] = 'NEU';
-        } elseif ($product['sale_price']) {
-            $product['badge'] = 'sale';
+        // FIX: Use the badge from database, don't override it
+        $badge = $product['badge']; // This comes from the database
+        $product['badge_text'] = null;
+        
+        // Only set badge_text if there's actually a badge
+        if (!empty($badge)) {
+            switch ($badge) {
+                case 'new':
+                    $product['badge_text'] = 'NEU';
+                    break;
+                case 'sale':
+                    if ($product['sale_price'] && $product['sale_price'] > 0) {
+                        $discount = round((($product['base_price'] - $product['sale_price']) / $product['base_price']) * 100);
+                        $product['badge_text'] = "-{$discount}%";
+                    } else {
+                        $product['badge_text'] = 'SALE';
+                    }
+                    break;
+                case 'bestseller':
+                    $product['badge_text'] = 'BESTSELLER';
+                    break;
+            }
+        }
+        
+        // If no badge but has sale price, show discount percentage
+        if (empty($badge) && $product['sale_price'] && $product['sale_price'] > 0) {
             $discount = round((($product['base_price'] - $product['sale_price']) / $product['base_price']) * 100);
+            $product['badge'] = 'sale';
             $product['badge_text'] = "-{$discount}%";
-        } elseif ($product['is_featured']) {
-            $product['badge'] = 'bestseller';
-            $product['badge_text'] = 'BESTSELLER';
         }
     }
     
@@ -189,6 +209,19 @@ function handleProducts($pdo) {
     $countSql = "SELECT COUNT(*) FROM products p JOIN categories c ON p.category_id = c.category_id WHERE p.is_active = 1";
     if ($category !== 'all') {
         $countSql .= " AND c.slug = :category";
+    }
+    
+    // Apply same filter to count query
+    switch ($filter) {
+        case 'new':
+            $countSql .= " AND p.badge = 'new'";
+            break;
+        case 'sale':
+            $countSql .= " AND p.badge = 'sale'";
+            break;
+        case 'bestseller':
+            $countSql .= " AND p.badge = 'bestseller'";
+            break;
     }
     
     $countStmt = $pdo->prepare($countSql);
