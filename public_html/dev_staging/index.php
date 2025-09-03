@@ -475,9 +475,9 @@ $lang = $_COOKIE['lang'] ?? 'de';
     </div>
 
     <!-- Scripts -->
-    <script src="assets/js/translations.js"></script>
-    <script src="assets/js/main.js"></script>
-    <script src="assets/js/cart.js"></script>
+    <script src="assets/js/translations.js?v=<?= filemtime('assets/js/translations.js') ?>"></script>
+    <script src="assets/js/main.js?v=<?= filemtime('assets/js/main.js') ?>"></script>
+    <script src="assets/js/cart.js?v=<?= filemtime('assets/js/cart.js') ?>"></script>
     <script src="assets/js/products-v2.js?v=<?= filemtime('assets/js/products-v2.js') ?>"></script>
     
     <!-- Force products initialization after page load -->
