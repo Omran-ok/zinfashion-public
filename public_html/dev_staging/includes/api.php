@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// API Handler File - Fixed Badge Logic
+// API Handler File - Updated for Header Integration
 // Location: /public_html/dev_staging/includes/api.php
 // ===================================
 
@@ -8,18 +8,29 @@
  * ZIN Fashion - API Handler
  */
 
-// Check if this is an API request
-if (isset($_GET['api'])) {
+// Check if this is an API request (both old and new format)
+if (isset($_GET['api']) || isset($_GET['action'])) {
     header('Content-Type: application/json');
     header('Access-Control-Allow-Origin: ' . SITE_URL);
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
     header('Access-Control-Allow-Headers: Content-Type');
     
-    $action = sanitizeInput($_GET['api']);
+    // Support both api parameter and action parameter
+    $action = sanitizeInput($_GET['api'] ?? $_GET['action'] ?? '');
     $pdo = getDBConnection();
     
     try {
         switch ($action) {
+            // New endpoints for header.php
+            case 'getCartCount':
+                handleCartCount($pdo);
+                break;
+                
+            case 'getWishlistCount':
+                handleWishlistCount($pdo);
+                break;
+                
+            // Existing endpoints
             case 'categories':
                 handleCategories($pdo);
                 break;
@@ -62,12 +73,60 @@ if (isset($_GET['api'])) {
 }
 
 /**
+ * Handle Cart Count Request (New for header.php)
+ */
+function handleCartCount($pdo) {
+    $count = 0;
+    
+    // If user is logged in, get from database
+    if (isLoggedIn()) {
+        $userId = getCurrentUserId();
+        $sql = "SELECT SUM(quantity) as count FROM cart_items WHERE user_id = :user_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['user_id' => $userId]);
+        $result = $stmt->fetch();
+        $count = $result['count'] ?? 0;
+    } else {
+        // Get from session for guests
+        if (isset($_SESSION['cart'])) {
+            $count = array_sum($_SESSION['cart']);
+        }
+    }
+    
+    echo json_encode(['count' => intval($count)]);
+}
+
+/**
+ * Handle Wishlist Count Request (New for header.php)
+ */
+function handleWishlistCount($pdo) {
+    $count = 0;
+    
+    // If user is logged in, get from database
+    if (isLoggedIn()) {
+        $userId = getCurrentUserId();
+        $sql = "SELECT COUNT(*) as count FROM wishlists WHERE user_id = :user_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['user_id' => $userId]);
+        $result = $stmt->fetch();
+        $count = $result['count'] ?? 0;
+    } else {
+        // Get from session for guests
+        if (isset($_SESSION['wishlist'])) {
+            $count = count($_SESSION['wishlist']);
+        }
+    }
+    
+    echo json_encode(['count' => intval($count)]);
+}
+
+/**
  * Handle Categories Request
  */
 function handleCategories($pdo) {
     $parentId = isset($_GET['parent']) ? intval($_GET['parent']) : null;
     
-    $sql = "SELECT * FROM categories WHERE ";
+    $sql = "SELECT * FROM categories WHERE is_active = 1 AND ";
     $sql .= $parentId ? "parent_id = :parent_id" : "parent_id IS NULL";
     $sql .= " ORDER BY display_order, category_name";
     
@@ -116,7 +175,7 @@ function handleProducts($pdo) {
         $params['category'] = $category;
     }
     
-    // Additional filters - FIX: Only filter by badge, don't override it
+    // Additional filters - Only filter by badge, don't override it
     switch ($filter) {
         case 'new':
             $sql .= " AND p.badge = 'new'";
@@ -173,7 +232,7 @@ function handleProducts($pdo) {
             $product['old_price'] = $product['base_price'];
         }
         
-        // FIX: Use the badge from database, don't override it
+        // Use the badge from database, don't override it
         $badge = $product['badge']; // This comes from the database
         $product['badge_text'] = null;
         
@@ -268,8 +327,12 @@ function handleSingleProduct($pdo) {
         return;
     }
     
-    // Get product variants
-    $variantSql = "SELECT * FROM product_variants WHERE product_id = :product_id AND is_available = 1";
+    // Get product variants with size and color information
+    $variantSql = "SELECT pv.*, s.size_name, c.color_name, c.color_code 
+                   FROM product_variants pv
+                   LEFT JOIN sizes s ON pv.size_id = s.size_id
+                   LEFT JOIN colors c ON pv.color_id = c.color_id
+                   WHERE pv.product_id = :product_id AND pv.is_available = 1";
     $variantStmt = $pdo->prepare($variantSql);
     $variantStmt->execute(['product_id' => $productId]);
     $product['variants'] = $variantStmt->fetchAll();
@@ -281,7 +344,9 @@ function handleSingleProduct($pdo) {
     $product['images'] = $imageStmt->fetchAll();
     
     // Get related products
-    $relatedSql = "SELECT p.*, c.category_name 
+    $relatedSql = "SELECT p.*, c.category_name,
+                   (SELECT pi.image_url FROM product_images pi 
+                    WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
                    FROM products p
                    JOIN categories c ON p.category_id = c.category_id
                    WHERE p.category_id = :category_id 
@@ -310,11 +375,15 @@ function handleSearch($pdo) {
         return;
     }
     
-    $sql = "SELECT p.*, c.category_name 
+    $sql = "SELECT p.*, c.category_name,
+            (SELECT pi.image_url FROM product_images pi 
+             WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
             FROM products p
             JOIN categories c ON p.category_id = c.category_id
             WHERE p.is_active = 1 
             AND (p.product_name LIKE :query 
+                 OR p.product_name_en LIKE :query
+                 OR p.product_name_ar LIKE :query
                  OR p.description LIKE :query
                  OR c.category_name LIKE :query)
             LIMIT 20";
@@ -341,6 +410,7 @@ function handleNewsletter($pdo) {
     
     $data = json_decode(file_get_contents('php://input'), true);
     $email = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
+    $language = sanitizeInput($data['language'] ?? 'de');
     
     if (!$email) {
         http_response_code(400);
@@ -349,19 +419,28 @@ function handleNewsletter($pdo) {
     }
     
     // Check if already subscribed
-    $checkSql = "SELECT subscriber_id FROM newsletter_subscribers WHERE email = :email";
+    $checkSql = "SELECT subscriber_id, is_active FROM newsletter_subscribers WHERE email = :email";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute(['email' => $email]);
+    $subscriber = $checkStmt->fetch();
     
-    if ($checkStmt->fetch()) {
-        echo json_encode(['success' => true, 'message' => 'Already subscribed']);
+    if ($subscriber) {
+        if ($subscriber['is_active']) {
+            echo json_encode(['success' => true, 'message' => 'Already subscribed']);
+        } else {
+            // Reactivate subscription
+            $updateSql = "UPDATE newsletter_subscribers SET is_active = 1, subscribed_at = NOW() WHERE subscriber_id = :id";
+            $updateStmt = $pdo->prepare($updateSql);
+            $updateStmt->execute(['id' => $subscriber['subscriber_id']]);
+            echo json_encode(['success' => true, 'message' => 'Subscription reactivated']);
+        }
         return;
     }
     
-    // Subscribe
-    $sql = "INSERT INTO newsletter_subscribers (email, subscribed_at) VALUES (:email, NOW())";
+    // New subscription
+    $sql = "INSERT INTO newsletter_subscribers (email, preferred_language, subscribed_at) VALUES (:email, :language, NOW())";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['email' => $email]);
+    $stmt->execute(['email' => $email, 'language' => $language]);
     
     // Log activity
     logActivity('newsletter_subscription', ['email' => $email]);
@@ -386,40 +465,86 @@ function handleCart($pdo) {
             $items = [];
             $total = 0;
             
-            foreach ($_SESSION['cart'] as $productId => $quantity) {
-                $sql = "SELECT p.*, pi.image_url 
-                        FROM products p
-                        LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                        WHERE p.product_id = :product_id AND p.is_active = 1";
+            if (isLoggedIn()) {
+                // Get from database for logged-in users
+                $userId = getCurrentUserId();
+                $sql = "SELECT ci.*, p.product_name, p.product_name_en, p.product_name_ar, 
+                        p.base_price, p.sale_price, pv.variant_sku,
+                        s.size_name, c.color_name,
+                        (SELECT pi.image_url FROM product_images pi 
+                         WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image_url
+                        FROM cart_items ci
+                        JOIN product_variants pv ON ci.variant_id = pv.variant_id
+                        JOIN products p ON pv.product_id = p.product_id
+                        LEFT JOIN sizes s ON pv.size_id = s.size_id
+                        LEFT JOIN colors c ON pv.color_id = c.color_id
+                        WHERE ci.user_id = :user_id";
                 
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute(['product_id' => $productId]);
-                $product = $stmt->fetch();
+                $stmt->execute(['user_id' => $userId]);
+                $cartItems = $stmt->fetchAll();
                 
-                if ($product) {
-                    $price = $product['sale_price'] ?: $product['base_price'];
-                    $subtotal = $price * $quantity;
+                foreach ($cartItems as $item) {
+                    $price = $item['sale_price'] ?: $item['base_price'];
+                    $subtotal = $price * $item['quantity'];
                     
                     $items[] = [
-                        'cart_item_id' => $productId,
-                        'product_id' => $productId,
-                        'product_name' => $product['product_name'],
-                        'base_price' => $product['base_price'],
-                        'sale_price' => $product['sale_price'],
-                        'quantity' => $quantity,
+                        'cart_item_id' => $item['cart_item_id'],
+                        'product_id' => $item['product_id'],
+                        'variant_id' => $item['variant_id'],
+                        'product_name' => $item['product_name'],
+                        'size' => $item['size_name'],
+                        'color' => $item['color_name'],
+                        'base_price' => $item['base_price'],
+                        'sale_price' => $item['sale_price'],
+                        'quantity' => $item['quantity'],
                         'subtotal' => $subtotal,
-                        'image_url' => $product['image_url'] ?: '/assets/images/placeholder.jpg'
+                        'image_url' => $item['image_url'] ?: '/assets/images/placeholder.jpg'
                     ];
                     
                     $total += $subtotal;
                 }
+            } else {
+                // Get from session for guests
+                foreach ($_SESSION['cart'] as $productId => $quantity) {
+                    $sql = "SELECT p.*, pi.image_url 
+                            FROM products p
+                            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                            WHERE p.product_id = :product_id AND p.is_active = 1";
+                    
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute(['product_id' => $productId]);
+                    $product = $stmt->fetch();
+                    
+                    if ($product) {
+                        $price = $product['sale_price'] ?: $product['base_price'];
+                        $subtotal = $price * $quantity;
+                        
+                        $items[] = [
+                            'cart_item_id' => $productId,
+                            'product_id' => $productId,
+                            'product_name' => $product['product_name'],
+                            'base_price' => $product['base_price'],
+                            'sale_price' => $product['sale_price'],
+                            'quantity' => $quantity,
+                            'subtotal' => $subtotal,
+                            'image_url' => $product['image_url'] ?: '/assets/images/placeholder.jpg'
+                        ];
+                        
+                        $total += $subtotal;
+                    }
+                }
             }
+            
+            $shipping = $total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
             
             echo json_encode([
                 'items' => $items,
                 'subtotal' => $total,
-                'shipping' => $total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST,
-                'total' => $total + ($total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST)
+                'shipping' => $shipping,
+                'total' => $total + $shipping,
+                'free_shipping_threshold' => FREE_SHIPPING_THRESHOLD,
+                'free_shipping_remaining' => max(0, FREE_SHIPPING_THRESHOLD - $total)
             ]);
             break;
             
@@ -427,6 +552,7 @@ function handleCart($pdo) {
             // Add to cart
             $data = json_decode(file_get_contents('php://input'), true);
             $productId = intval($data['product_id'] ?? 0);
+            $variantId = intval($data['variant_id'] ?? 0);
             $quantity = intval($data['quantity'] ?? 1);
             
             if (!$productId || $quantity < 1) {
@@ -446,11 +572,39 @@ function handleCart($pdo) {
                 return;
             }
             
-            // Add or update cart
-            if (isset($_SESSION['cart'][$productId])) {
-                $_SESSION['cart'][$productId] += $quantity;
+            if (isLoggedIn()) {
+                // Add to database for logged-in users
+                $userId = getCurrentUserId();
+                
+                // Check if item already in cart
+                $checkSql = "SELECT cart_item_id, quantity FROM cart_items 
+                            WHERE user_id = :user_id AND variant_id = :variant_id";
+                $checkStmt = $pdo->prepare($checkSql);
+                $checkStmt->execute(['user_id' => $userId, 'variant_id' => $variantId ?: $productId]);
+                $existing = $checkStmt->fetch();
+                
+                if ($existing) {
+                    // Update quantity
+                    $updateSql = "UPDATE cart_items SET quantity = quantity + :quantity WHERE cart_item_id = :id";
+                    $updateStmt = $pdo->prepare($updateSql);
+                    $updateStmt->execute(['quantity' => $quantity, 'id' => $existing['cart_item_id']]);
+                } else {
+                    // Insert new item
+                    $insertSql = "INSERT INTO cart_items (user_id, variant_id, quantity) VALUES (:user_id, :variant_id, :quantity)";
+                    $insertStmt = $pdo->prepare($insertSql);
+                    $insertStmt->execute([
+                        'user_id' => $userId,
+                        'variant_id' => $variantId ?: $productId,
+                        'quantity' => $quantity
+                    ]);
+                }
             } else {
-                $_SESSION['cart'][$productId] = $quantity;
+                // Add to session for guests
+                if (isset($_SESSION['cart'][$productId])) {
+                    $_SESSION['cart'][$productId] += $quantity;
+                } else {
+                    $_SESSION['cart'][$productId] = $quantity;
+                }
             }
             
             echo json_encode(['success' => true, 'message' => 'Added to cart']);
@@ -468,8 +622,22 @@ function handleCart($pdo) {
                 return;
             }
             
-            if (isset($_SESSION['cart'][$itemId])) {
-                $_SESSION['cart'][$itemId] = $quantity;
+            if (isLoggedIn()) {
+                // Update in database
+                $userId = getCurrentUserId();
+                $sql = "UPDATE cart_items SET quantity = :quantity 
+                       WHERE cart_item_id = :item_id AND user_id = :user_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    'quantity' => $quantity,
+                    'item_id' => $itemId,
+                    'user_id' => $userId
+                ]);
+            } else {
+                // Update in session
+                if (isset($_SESSION['cart'][$itemId])) {
+                    $_SESSION['cart'][$itemId] = $quantity;
+                }
             }
             
             echo json_encode(['success' => true, 'message' => 'Cart updated']);
@@ -485,8 +653,17 @@ function handleCart($pdo) {
                 return;
             }
             
-            if (isset($_SESSION['cart'][$itemId])) {
-                unset($_SESSION['cart'][$itemId]);
+            if (isLoggedIn()) {
+                // Remove from database
+                $userId = getCurrentUserId();
+                $sql = "DELETE FROM cart_items WHERE cart_item_id = :item_id AND user_id = :user_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute(['item_id' => $itemId, 'user_id' => $userId]);
+            } else {
+                // Remove from session
+                if (isset($_SESSION['cart'][$itemId])) {
+                    unset($_SESSION['cart'][$itemId]);
+                }
             }
             
             echo json_encode(['success' => true, 'message' => 'Item removed']);
@@ -502,31 +679,50 @@ function handleCart($pdo) {
  * Handle Wishlist Operations
  */
 function handleWishlist($pdo) {
+    $method = $_SERVER['REQUEST_METHOD'];
+    
     // Initialize session wishlist if not exists
     if (!isset($_SESSION['wishlist'])) {
         $_SESSION['wishlist'] = [];
     }
-    
-    $method = $_SERVER['REQUEST_METHOD'];
     
     switch ($method) {
         case 'GET':
             // Get wishlist items
             $items = [];
             
-            foreach ($_SESSION['wishlist'] as $productId) {
+            if (isLoggedIn()) {
+                // Get from database for logged-in users
+                $userId = getCurrentUserId();
                 $sql = "SELECT p.*, pi.image_url 
-                        FROM products p
+                        FROM wishlists w
+                        JOIN products p ON w.product_id = p.product_id
                         LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                        WHERE p.product_id = :product_id AND p.is_active = 1";
+                        WHERE w.user_id = :user_id AND p.is_active = 1";
                 
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute(['product_id' => $productId]);
-                $product = $stmt->fetch();
+                $stmt->execute(['user_id' => $userId]);
+                $items = $stmt->fetchAll();
                 
-                if ($product) {
-                    $product['image_url'] = $product['image_url'] ?: '/assets/images/placeholder.jpg';
-                    $items[] = $product;
+                foreach ($items as &$item) {
+                    $item['image_url'] = $item['image_url'] ?: '/assets/images/placeholder.jpg';
+                }
+            } else {
+                // Get from session for guests
+                foreach ($_SESSION['wishlist'] as $productId) {
+                    $sql = "SELECT p.*, pi.image_url 
+                            FROM products p
+                            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                            WHERE p.product_id = :product_id AND p.is_active = 1";
+                    
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute(['product_id' => $productId]);
+                    $product = $stmt->fetch();
+                    
+                    if ($product) {
+                        $product['image_url'] = $product['image_url'] ?: '/assets/images/placeholder.jpg';
+                        $items[] = $product;
+                    }
                 }
             }
             
@@ -544,8 +740,25 @@ function handleWishlist($pdo) {
                 return;
             }
             
-            if (!in_array($productId, $_SESSION['wishlist'])) {
-                $_SESSION['wishlist'][] = $productId;
+            if (isLoggedIn()) {
+                // Add to database for logged-in users
+                $userId = getCurrentUserId();
+                
+                // Check if already in wishlist
+                $checkSql = "SELECT wishlist_id FROM wishlists WHERE user_id = :user_id AND product_id = :product_id";
+                $checkStmt = $pdo->prepare($checkSql);
+                $checkStmt->execute(['user_id' => $userId, 'product_id' => $productId]);
+                
+                if (!$checkStmt->fetch()) {
+                    $insertSql = "INSERT INTO wishlists (user_id, product_id) VALUES (:user_id, :product_id)";
+                    $insertStmt = $pdo->prepare($insertSql);
+                    $insertStmt->execute(['user_id' => $userId, 'product_id' => $productId]);
+                }
+            } else {
+                // Add to session for guests
+                if (!in_array($productId, $_SESSION['wishlist'])) {
+                    $_SESSION['wishlist'][] = $productId;
+                }
             }
             
             echo json_encode(['success' => true, 'message' => 'Added to wishlist']);
@@ -561,8 +774,17 @@ function handleWishlist($pdo) {
                 return;
             }
             
-            $_SESSION['wishlist'] = array_diff($_SESSION['wishlist'], [$productId]);
-            $_SESSION['wishlist'] = array_values($_SESSION['wishlist']); // Re-index array
+            if (isLoggedIn()) {
+                // Remove from database
+                $userId = getCurrentUserId();
+                $sql = "DELETE FROM wishlists WHERE user_id = :user_id AND product_id = :product_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute(['user_id' => $userId, 'product_id' => $productId]);
+            } else {
+                // Remove from session
+                $_SESSION['wishlist'] = array_diff($_SESSION['wishlist'], [$productId]);
+                $_SESSION['wishlist'] = array_values($_SESSION['wishlist']); // Re-index array
+            }
             
             echo json_encode(['success' => true, 'message' => 'Removed from wishlist']);
             break;
