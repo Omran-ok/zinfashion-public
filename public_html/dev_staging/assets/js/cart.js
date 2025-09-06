@@ -14,51 +14,25 @@ let cart = {
 // Wishlist state
 let wishlist = [];
 
-/**
- * Initialize Cart
- */
+// Initialize cart on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadCart();
     loadWishlist();
-    initializeCartEvents();
 });
 
 /**
- * Initialize Cart Events
- */
-function initializeCartEvents() {
-    // Cart icon click
-    const cartIcon = document.getElementById('cartIcon');
-    if (cartIcon) {
-        cartIcon.addEventListener('click', function(e) {
-            e.preventDefault();
-            openCart();
-        });
-    }
-    
-    // Cart overlay click to close
-    const cartOverlay = document.getElementById('cartOverlay');
-    if (cartOverlay) {
-        cartOverlay.addEventListener('click', closeCart);
-    }
-    
-    // Cart close button
-    const cartClose = document.querySelector('.cart-close');
-    if (cartClose) {
-        cartClose.addEventListener('click', closeCart);
-    }
-}
-
-/**
- * Load Cart from Server
+ * Load Cart Data
  */
 async function loadCart() {
     try {
         const response = await fetch('/api.php?api=cart');
-        if (response.ok) {
-            const data = await response.json();
-            cart = data;
-            updateCartUI();
+        const data = await response.json();
+        
+        cart = data;
+        updateCartUI();
+        
+        // Update count in header
+        if (typeof updateCartCount === 'function') {
             updateCartCount();
         }
     } catch (error) {
@@ -67,26 +41,29 @@ async function loadCart() {
 }
 
 /**
- * Load Wishlist from Server
+ * Load Wishlist Data
  */
 async function loadWishlist() {
     try {
         const response = await fetch('/api.php?api=wishlist');
-        if (response.ok) {
-            const data = await response.json();
-            wishlist = data.items || [];
+        const data = await response.json();
+        
+        wishlist = data.items || [];
+        updateWishlistUI();
+        
+        // Update count in header
+        if (typeof updateWishlistCount === 'function') {
             updateWishlistCount();
         }
     } catch (error) {
-        // User might not be logged in
-        console.log('Wishlist requires login');
+        console.error('Error loading wishlist:', error);
     }
 }
 
 /**
  * Add to Cart
  */
-async function addToCart(productId, quantity = 1) {
+async function addToCart(productId, quantity = 1, variantId = null) {
     try {
         const response = await fetch('/api.php?api=cart', {
             method: 'POST',
@@ -95,37 +72,32 @@ async function addToCart(productId, quantity = 1) {
             },
             body: JSON.stringify({
                 product_id: productId,
+                variant_id: variantId,
                 quantity: quantity
             })
         });
         
         if (response.ok) {
             await loadCart();
-            openCart();
-            showCartNotification('Product added to cart!');
+            showCartNotification('Product added to cart', 'success');
             
-            // Animate add to cart button
-            const btn = event.target;
-            if (btn && btn.classList.contains('add-to-cart')) {
-                animateCartButton(btn);
-            }
+            // Open cart modal
+            openCart();
         } else {
-            const error = await response.json();
-            showCartNotification(error.error || 'Failed to add to cart', 'error');
+            showCartNotification('Failed to add product', 'error');
         }
     } catch (error) {
         console.error('Error adding to cart:', error);
-        showCartNotification('Failed to add to cart', 'error');
+        showCartNotification('An error occurred', 'error');
     }
 }
 
 /**
- * Update Cart Item Quantity
+ * Update Cart Item
  */
 async function updateCartItem(itemId, quantity) {
     if (quantity < 1) {
-        removeFromCart(itemId);
-        return;
+        return removeFromCart(itemId);
     }
     
     try {
@@ -142,6 +114,7 @@ async function updateCartItem(itemId, quantity) {
         
         if (response.ok) {
             await loadCart();
+            renderCart();
         }
     } catch (error) {
         console.error('Error updating cart:', error);
@@ -159,7 +132,8 @@ async function removeFromCart(itemId) {
         
         if (response.ok) {
             await loadCart();
-            showCartNotification('Item removed from cart');
+            renderCart();
+            showCartNotification('Product removed from cart', 'info');
         }
     } catch (error) {
         console.error('Error removing from cart:', error);
@@ -169,8 +143,8 @@ async function removeFromCart(itemId) {
 /**
  * Toggle Wishlist
  */
-async function toggleWishlist(productId, button) {
-    const isInWishlist = button.classList.contains('active');
+async function toggleWishlist(productId) {
+    const isInWishlist = wishlist.some(item => item.product_id === productId);
     
     try {
         const url = isInWishlist 
@@ -188,15 +162,17 @@ async function toggleWishlist(productId, button) {
         });
         
         if (response.ok) {
-            button.classList.toggle('active');
             await loadWishlist();
+            
+            // Update wishlist button state
+            updateWishlistButtons(productId, !isInWishlist);
+            
             showCartNotification(
                 isInWishlist ? 'Removed from wishlist' : 'Added to wishlist',
                 'success'
             );
         } else if (response.status === 401) {
             showCartNotification('Please login to use wishlist', 'warning');
-            // Optionally redirect to login
         }
     } catch (error) {
         console.error('Error toggling wishlist:', error);
@@ -229,6 +205,19 @@ function closeCart() {
         cartModal.classList.remove('active');
         cartOverlay.classList.remove('active');
         document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Toggle Cart (for header button)
+ */
+function toggleCart() {
+    const cartModal = document.getElementById('cartModal');
+    
+    if (cartModal && cartModal.classList.contains('active')) {
+        closeCart();
+    } else {
+        openCart();
     }
 }
 
@@ -267,22 +256,27 @@ function renderCart() {
             <div class="cart-footer">
                 <div class="cart-subtotal">
                     <span>${t('subtotal')}</span>
-                    <span class="cart-subtotal-price">€${cart.subtotal.toFixed(2)}</span>
+                    <span class="cart-subtotal-price">€${cart.subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div class="cart-shipping">
                     <span>${t('shipping-cost')}</span>
                     <span class="cart-shipping-price">
-                        ${cart.shipping === 0 ? t('free') : `€${cart.shipping.toFixed(2)}`}
+                        ${cart.shipping === 0 ? t('free') : `€${cart.shipping.toFixed(2).replace('.', ',')}`}
                     </span>
                 </div>
+                ${cart.free_shipping_remaining > 0 ? `
+                    <div class="free-shipping-notice">
+                        <small>Add €${cart.free_shipping_remaining.toFixed(2).replace('.', ',')} for free shipping!</small>
+                    </div>
+                ` : ''}
                 <div class="cart-total">
                     <span>${t('total')}</span>
-                    <span class="cart-total-price">€${cart.total.toFixed(2)}</span>
+                    <span class="cart-total-price">€${cart.total.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <button class="cart-checkout-btn" onclick="goToCheckout()">
                     ${t('checkout')}
                 </button>
-                <a href="/cart" class="cart-view-link">${t('view-cart')}</a>
+                <a href="/cart.php" class="cart-view-link">${t('view-cart')}</a>
             </div>
         `;
     } else {
@@ -302,7 +296,7 @@ function renderCart() {
                         <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                     </svg>
                     <p class="cart-empty-text">${t('cart-empty')}</p>
-                    <button class="btn btn-primary" onclick="closeCart()">
+                    <button class="btn btn-primary" onclick="closeCart(); window.location.href='/shop.php';">
                         ${t('continue-shopping')}
                     </button>
                 </div>
@@ -323,6 +317,9 @@ function renderCartItem(item) {
         return key;
     };
     
+    const price = item.sale_price || item.base_price;
+    const subtotal = price * item.quantity;
+    
     return `
         <div class="cart-item" data-item-id="${item.cart_item_id}">
             <div class="cart-item-image">
@@ -334,17 +331,27 @@ function renderCartItem(item) {
                     ${item.size ? `<span>${t('size')}: ${item.size}</span>` : ''}
                     ${item.color ? `<span>${t('color')}: ${item.color}</span>` : ''}
                 </div>
-                <div class="cart-item-price">€${(item.sale_price || item.base_price).toFixed(2)}</div>
+                <div class="cart-item-price">
+                    ${item.sale_price ? `
+                        <span class="price-old">€${item.base_price.toFixed(2).replace('.', ',')}</span>
+                        <span class="price-current">€${price.toFixed(2).replace('.', ',')}</span>
+                    ` : `
+                        <span class="price-current">€${price.toFixed(2).replace('.', ',')}</span>
+                    `}
+                </div>
                 <div class="cart-item-quantity">
-                    <button class="quantity-btn" onclick="updateCartItem(${item.cart_item_id}, ${item.quantity - 1})">-</button>
-                    <input type="number" class="quantity-input" value="${item.quantity}" readonly>
-                    <button class="quantity-btn" onclick="updateCartItem(${item.cart_item_id}, ${item.quantity + 1})">+</button>
+                    <button class="quantity-btn" onclick="updateCartItem(${item.cart_item_id}, ${item.quantity - 1})">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" class="quantity-input" value="${item.quantity}" 
+                           onchange="updateCartItem(${item.cart_item_id}, this.value)" min="1">
+                    <button class="quantity-btn" onclick="updateCartItem(${item.cart_item_id}, ${item.quantity + 1})">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
             </div>
-            <button class="cart-item-remove" onclick="removeFromCart(${item.cart_item_id})" title="${t('remove')}">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                </svg>
+            <button class="cart-item-remove" onclick="removeFromCart(${item.cart_item_id})">
+                <i class="fas fa-times"></i>
             </button>
         </div>
     `;
@@ -354,58 +361,59 @@ function renderCartItem(item) {
  * Update Cart UI
  */
 function updateCartUI() {
-    updateCartCount();
-    if (document.getElementById('cartModal') && document.getElementById('cartModal').classList.contains('active')) {
-        renderCart();
-    }
-}
-
-/**
- * Update Cart Count Badge
- */
-function updateCartCount() {
-    const cartCount = document.querySelector('.cart-count');
-    if (cartCount) {
-        const totalItems = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-        cartCount.textContent = totalItems;
-        cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
-    }
-}
-
-/**
- * Update Wishlist Count Badge
- */
-function updateWishlistCount() {
-    const wishlistCount = document.querySelector('.wishlist-count');
-    if (wishlistCount) {
-        wishlistCount.textContent = wishlist.length;
-        wishlistCount.style.display = wishlist.length > 0 ? 'flex' : 'none';
-    }
-}
-
-/**
- * Animate Cart Button
- */
-function animateCartButton(button) {
-    const originalText = button.textContent;
-    button.classList.add('added');
-    button.textContent = '✓ Added';
+    // Update cart count in header
+    const cartCountElements = document.querySelectorAll('#cartCount, .cart-count');
+    const itemCount = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
     
-    setTimeout(() => {
-        button.classList.remove('added');
-        button.textContent = originalText;
-    }, 2000);
+    cartCountElements.forEach(el => {
+        if (el) el.textContent = itemCount;
+    });
+}
+
+/**
+ * Update Wishlist UI
+ */
+function updateWishlistUI() {
+    // Update wishlist count in header
+    const wishlistCountElements = document.querySelectorAll('#wishlistCount, .wishlist-count');
+    wishlistCountElements.forEach(el => {
+        if (el) el.textContent = wishlist.length;
+    });
+}
+
+/**
+ * Update Wishlist Buttons
+ */
+function updateWishlistButtons(productId, isInWishlist) {
+    const buttons = document.querySelectorAll(`[data-product-id="${productId}"] .wishlist-btn`);
+    buttons.forEach(btn => {
+        if (isInWishlist) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fas fa-heart"></i>';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="far fa-heart"></i>';
+        }
+    });
 }
 
 /**
  * Show Cart Notification
  */
-function showCartNotification(message, type = 'success') {
+function showCartNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.cart-notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    // Create new notification
     const notification = document.createElement('div');
     notification.className = `cart-notification cart-notification-${type}`;
     notification.innerHTML = `
-        <div class="cart-notification-content">
-            ${type === 'success' ? '<svg class="icon"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ''}
+        <div class="notification-content">
+            ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : ''}
+            ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : ''}
+            ${type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' : ''}
+            ${type === 'info' ? '<i class="fas fa-info-circle"></i>' : ''}
             <span>${message}</span>
         </div>
     `;
@@ -431,7 +439,9 @@ function showCartNotification(message, type = 'success') {
  */
 function goToCheckout() {
     if (cart.items && cart.items.length > 0) {
-        window.location.href = '/checkout';
+        window.location.href = '/checkout.php';
+    } else {
+        showCartNotification('Your cart is empty', 'warning');
     }
 }
 
@@ -475,40 +485,41 @@ function renderQuickView(product) {
             
             <div class="quick-view-content">
                 <div class="quick-view-images">
-                    <img src="${product.image_url || '/assets/images/placeholder.jpg'}" alt="${product.product_name}">
+                    <img src="${product.images?.[0]?.image_url || '/assets/images/placeholder.jpg'}" 
+                         alt="${product.product_name}">
                 </div>
                 
                 <div class="quick-view-info">
                     <h2 class="quick-view-title">${product.product_name}</h2>
                     <div class="quick-view-price">
                         ${product.sale_price ? `
-                            <span class="price">€${product.sale_price.toFixed(2)}</span>
-                            <span class="old-price">€${product.base_price.toFixed(2)}</span>
+                            <span class="price-old">€${product.base_price}</span>
+                            <span class="price-current">€${product.sale_price}</span>
                         ` : `
-                            <span class="price">€${product.base_price.toFixed(2)}</span>
+                            <span class="price-current">€${product.base_price}</span>
                         `}
                     </div>
                     
-                    <p class="quick-view-description">${product.short_description || product.description}</p>
+                    <p class="quick-view-description">${product.description || ''}</p>
                     
                     <div class="quick-view-options">
                         ${product.variants && product.variants.length > 0 ? `
                             <div class="size-options">
-                                <label>${t('size')}</label>
-                                <select class="size-select">
+                                <label>${t('size')}:</label>
+                                <select id="quickViewSize">
                                     ${product.variants.map(v => `
-                                        <option value="${v.variant_id}">${v.size}</option>
+                                        <option value="${v.variant_id}">${v.size_name}</option>
                                     `).join('')}
                                 </select>
                             </div>
                         ` : ''}
                         
-                        <div class="quantity-options">
-                            <label>${t('quantity')}</label>
-                            <div class="quantity-selector">
-                                <button class="quantity-btn" onclick="decreaseQuickViewQuantity()">-</button>
-                                <input type="number" class="quantity-input" id="quickViewQuantity" value="1" min="1">
-                                <button class="quantity-btn" onclick="increaseQuickViewQuantity()">+</button>
+                        <div class="quantity-selector">
+                            <label>${t('quantity')}:</label>
+                            <div class="quantity-controls">
+                                <button onclick="decreaseQuickViewQuantity()">-</button>
+                                <input type="number" id="quickViewQuantity" value="1" min="1">
+                                <button onclick="increaseQuickViewQuantity()">+</button>
                             </div>
                         </div>
                     </div>
@@ -517,7 +528,7 @@ function renderQuickView(product) {
                         <button class="btn btn-primary" onclick="addToCartFromQuickView(${product.product_id})">
                             ${t('add-to-cart')}
                         </button>
-                        <a href="/product/${product.product_id}" class="btn btn-outline">
+                        <a href="/product.php?id=${product.product_id}" class="btn btn-outline">
                             ${t('view-details')}
                         </a>
                     </div>
@@ -527,6 +538,7 @@ function renderQuickView(product) {
     `;
     
     modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 /**
@@ -536,6 +548,7 @@ function closeQuickView() {
     const modal = document.getElementById('quickViewModal');
     if (modal) {
         modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
@@ -561,7 +574,10 @@ function decreaseQuickViewQuantity() {
  */
 function addToCartFromQuickView(productId) {
     const quantity = document.getElementById('quickViewQuantity')?.value || 1;
-    addToCart(productId, parseInt(quantity));
+    const variantSelect = document.getElementById('quickViewSize');
+    const variantId = variantSelect?.value || null;
+    
+    addToCart(productId, parseInt(quantity), variantId);
     closeQuickView();
 }
 
@@ -572,6 +588,7 @@ window.removeFromCart = removeFromCart;
 window.toggleWishlist = toggleWishlist;
 window.openCart = openCart;
 window.closeCart = closeCart;
+window.toggleCart = toggleCart;
 window.openQuickView = openQuickView;
 window.closeQuickView = closeQuickView;
 window.goToCheckout = goToCheckout;
