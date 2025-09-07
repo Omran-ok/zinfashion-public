@@ -25,7 +25,7 @@ $socialLinks = [
 ];
 
 // Payment methods
-$paymentMethods = ['visa', 'mastercard', 'paypal', 'klarna'];
+$paymentMethods = ['Visa', 'Mastercard', 'PayPal', 'Klarna'];
 
 // Newsletter subscription status
 $newsletterMessage = $_SESSION['newsletter_message'] ?? '';
