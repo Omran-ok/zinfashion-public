@@ -1,0 +1,10 @@
+/* main.css */
+@import url('base/variables.css');
+@import url('base/reset.css');
+@import url('base/typography.css');
+@import url('components/header.css');
+@import url('components/header-responsive.css');
+@import url('components/footer.css');
+@import url('components/footer-responsive.css');
+@import url('pages/homepage.css');
+@import url('pages/homepage-responsive.css');
