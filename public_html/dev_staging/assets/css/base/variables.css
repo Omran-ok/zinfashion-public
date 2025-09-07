@@ -1,0 +1,146 @@
+/* ============================================
+   FILE: /assets/css/base/variables.css
+   Contains all CSS variables, theme colors, spacing, etc.
+   Dark theme is the default
+   ============================================ */
+
+:root {
+    /* ========== Brand Colors ========== */
+    --primary-gold: #D4AF37;
+    --dark-gold: #B8941F;
+    --light-gold: #F4E4C1;
+    --black: #000000;
+    --white: #FFFFFF;
+    
+    /* ========== Gray Scale ========== */
+    --gray-100: #F8F9FA;
+    --gray-200: #E9ECEF;
+    --gray-300: #DEE2E6;
+    --gray-400: #CED4DA;
+    --gray-500: #ADB5BD;
+    --gray-600: #6C757D;
+    --gray-700: #495057;
+    --gray-800: #343A40;
+    --gray-900: #212529;
+    
+    /* ========== Semantic Colors ========== */
+    --success: #28A745;
+    --error: #DC3545;
+    --warning: #FFC107;
+    --info: #17A2B8;
+    
+    /* ========== Dark Theme (Default) ========== */
+    --bg-primary: #1A1A1A;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2D2D2D;
+    --text-primary: #F4E4C1;
+    --text-secondary: #B8941F;
+    --text-tertiary: #8B7355;
+    --border-color: #3A3A3A;
+    --border-light: #2A2A2A;
+    --card-bg: #2D2D2D;
+    --overlay: rgba(0, 0, 0, 0.7);
+    
+    /* ========== Spacing System ========== */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --spacing-3xl: 64px;
+    --spacing-4xl: 96px;
+    
+    /* ========== Typography ========== */
+    --font-primary: 'Montserrat', sans-serif;
+    --font-secondary: 'Playfair Display', serif;
+    --font-size-base: 16px;
+    --line-height-base: 1.6;
+    
+    /* Font Sizes */
+    --font-size-xs: 0.75rem;     /* 12px */
+    --font-size-sm: 0.875rem;    /* 14px */
+    --font-size-md: 1rem;        /* 16px */
+    --font-size-lg: 1.125rem;    /* 18px */
+    --font-size-xl: 1.25rem;     /* 20px */
+    --font-size-2xl: 1.5rem;     /* 24px */
+    --font-size-3xl: 2rem;       /* 32px */
+    --font-size-4xl: 2.5rem;     /* 40px */
+    --font-size-5xl: 3rem;       /* 48px */
+    
+    /* ========== Transitions ========== */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* ========== Shadows (adjusted for dark theme) ========== */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.7);
+    
+    /* ========== Layout ========== */
+    --container-max: 1200px;
+    --container-padding: var(--spacing-lg);
+    --header-height: 140px;
+    --nav-height: 60px;
+    
+    /* ========== Borders ========== */
+    --border-width: 1px;
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 20px;
+    --border-radius-round: 50px;
+    --border-radius-circle: 50%;
+    
+    /* ========== Z-index Scale ========== */
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-fixed: 300;
+    --z-modal-backdrop: 1000;
+    --z-modal: 1001;
+    --z-popover: 1100;
+    --z-tooltip: 1200;
+    --z-notification: 1300;
+    
+    /* ========== Breakpoints (for reference) ========== */
+    --breakpoint-xs: 480px;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --breakpoint-2xl: 1400px;
+}
+
+/* ========== Light Theme (Optional) ========== */
+[data-theme="light"] {
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F8F9FA;
+    --bg-tertiary: #FFFFFF;
+    --text-primary: #212529;
+    --text-secondary: #6C757D;
+    --text-tertiary: #ADB5BD;
+    --border-color: #DEE2E6;
+    --border-light: #E9ECEF;
+    --card-bg: #FFFFFF;
+    --overlay: rgba(0, 0, 0, 0.5);
+    
+    /* Light theme shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.12);
+}
+
+/* ========== RTL Support Variables ========== */
+[dir="rtl"] {
+    --direction: rtl;
+    --text-align: right;
+    --margin-start: 0 var(--spacing-md) 0 0;
+    --margin-end: 0 0 0 var(--spacing-md);
+    --padding-start: 0 var(--spacing-md) 0 0;
+    --padding-end: 0 0 0 var(--spacing-md);
+}
