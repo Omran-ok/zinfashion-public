@@ -143,10 +143,6 @@ $pageKeywords = $pageKeywords ?? 'Mode, Fashion, Premium, Luxury';
     <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
 </head>
 <body>
-    
-    <!-- Skip to Content -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
     <!-- Header -->
     <header class="header">
         <!-- Top Bar -->
