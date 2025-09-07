@@ -24,9 +24,10 @@ $ogType = 'website';
 
 // Additional CSS for homepage
 $additionalStyles = [
-    SITE_URL . '/assets/css/homepage.css',
-    SITE_URL . '/assets/css/components.css',
+    SITE_URL . '/assets/css/main.css',
     SITE_URL . '/assets/css/main-enhanced.css',
+    SITE_URL . '/assets/css/components.css',
+    SITE_URL . '/assets/css/homepage.css'
 ];
 
 // Get database connection
