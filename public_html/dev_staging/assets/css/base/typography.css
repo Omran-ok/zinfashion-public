@@ -1,0 +1,358 @@
+/* ============================================
+   FILE: /assets/css/base/typography.css
+   Typography system and text styles
+   ============================================ */
+
+/* ========== Font Imports ========== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* ========== Headings ========== */
+h1, .h1 {
+    font-family: var(--font-secondary);
+    font-size: clamp(2rem, 5vw, var(--font-size-5xl));
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    letter-spacing: -0.02em;
+}
+
+h2, .h2 {
+    font-family: var(--font-secondary);
+    font-size: clamp(1.75rem, 4vw, var(--font-size-4xl));
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    letter-spacing: -0.01em;
+}
+
+h3, .h3 {
+    font-family: var(--font-secondary);
+    font-size: clamp(1.5rem, 3vw, var(--font-size-3xl));
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+h4, .h4 {
+    font-family: var(--font-secondary);
+    font-size: clamp(1.25rem, 2.5vw, var(--font-size-2xl));
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+h5, .h5 {
+    font-family: var(--font-primary);
+    font-size: clamp(1.125rem, 2vw, var(--font-size-xl));
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+h6, .h6 {
+    font-family: var(--font-primary);
+    font-size: clamp(1rem, 1.5vw, var(--font-size-lg));
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ========== Body Text ========== */
+p {
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-base);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.lead {
+    font-size: var(--font-size-lg);
+    line-height: 1.7;
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.small {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.xs {
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+}
+
+/* ========== Text Colors ========== */
+.text-primary {
+    color: var(--text-primary) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-tertiary {
+    color: var(--text-tertiary) !important;
+}
+
+.text-gold {
+    color: var(--primary-gold) !important;
+}
+
+.text-dark-gold {
+    color: var(--dark-gold) !important;
+}
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-error {
+    color: var(--error) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+.text-info {
+    color: var(--info) !important;
+}
+
+.text-white {
+    color: var(--white) !important;
+}
+
+.text-black {
+    color: var(--black) !important;
+}
+
+/* ========== Font Families ========== */
+.font-serif {
+    font-family: var(--font-secondary) !important;
+}
+
+.font-sans {
+    font-family: var(--font-primary) !important;
+}
+
+/* ========== Font Weights ========== */
+.font-light {
+    font-weight: 300 !important;
+}
+
+.font-normal {
+    font-weight: 400 !important;
+}
+
+.font-medium {
+    font-weight: 500 !important;
+}
+
+.font-semibold {
+    font-weight: 600 !important;
+}
+
+.font-bold {
+    font-weight: 700 !important;
+}
+
+.font-black {
+    font-weight: 900 !important;
+}
+
+/* ========== Text Alignment ========== */
+.text-left {
+    text-align: left !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.text-justify {
+    text-align: justify !important;
+}
+
+/* ========== Text Transform ========== */
+.uppercase {
+    text-transform: uppercase !important;
+}
+
+.lowercase {
+    text-transform: lowercase !important;
+}
+
+.capitalize {
+    text-transform: capitalize !important;
+}
+
+.normal-case {
+    text-transform: none !important;
+}
+
+/* ========== Letter Spacing ========== */
+.tracking-tight {
+    letter-spacing: -0.05em !important;
+}
+
+.tracking-normal {
+    letter-spacing: 0 !important;
+}
+
+.tracking-wide {
+    letter-spacing: 0.05em !important;
+}
+
+.tracking-wider {
+    letter-spacing: 0.1em !important;
+}
+
+.tracking-widest {
+    letter-spacing: 0.2em !important;
+}
+
+/* ========== Line Height ========== */
+.leading-none {
+    line-height: 1 !important;
+}
+
+.leading-tight {
+    line-height: 1.25 !important;
+}
+
+.leading-normal {
+    line-height: 1.6 !important;
+}
+
+.leading-relaxed {
+    line-height: 1.75 !important;
+}
+
+.leading-loose {
+    line-height: 2 !important;
+}
+
+/* ========== Text Decoration ========== */
+.underline {
+    text-decoration: underline !important;
+}
+
+.line-through {
+    text-decoration: line-through !important;
+}
+
+.no-underline {
+    text-decoration: none !important;
+}
+
+/* ========== Text Overflow ========== */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-ellipsis {
+    text-overflow: ellipsis;
+}
+
+.text-clip {
+    text-overflow: clip;
+}
+
+/* ========== Special Text Styles ========== */
+.gradient-text {
+    background: linear-gradient(135deg, var(--primary-gold) 0%, var(--dark-gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.shadow-text {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.outline-text {
+    -webkit-text-stroke: 1px var(--primary-gold);
+    -webkit-text-fill-color: transparent;
+}
+
+/* ========== Links ========== */
+a {
+    color: var(--primary-gold);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--dark-gold);
+}
+
+a.underline-hover:hover {
+    text-decoration: underline;
+}
+
+/* ========== Lists ========== */
+.list-disc {
+    list-style-type: disc;
+    padding-left: var(--spacing-xl);
+}
+
+.list-decimal {
+    list-style-type: decimal;
+    padding-left: var(--spacing-xl);
+}
+
+.list-none {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+/* ========== Blockquote ========== */
+blockquote {
+    font-family: var(--font-secondary);
+    font-size: var(--font-size-lg);
+    font-style: italic;
+    color: var(--text-secondary);
+    border-left: 4px solid var(--primary-gold);
+    padding-left: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+/* ========== Code ========== */
+code {
+    font-family: 'Courier New', monospace;
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.875em;
+    color: var(--primary-gold);
+}
+
+pre {
+    font-family: 'Courier New', monospace;
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    line-height: 1.4;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+}
