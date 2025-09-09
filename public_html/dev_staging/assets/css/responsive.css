@@ -1,6 +1,7 @@
 /**
  * ZIN Fashion - Responsive Styles
  * Location: /public_html/dev_staging/assets/css/responsive.css
+ * Updated: Added responsive styles for header wrapper
  */
 
 /* ========================================
@@ -14,6 +15,19 @@
     h1 { font-size: 2.5rem; }
     h2 { font-size: 2rem; }
     h3 { font-size: 1.75rem; }
+    
+    /* Header adjustments */
+    .header-wrapper.scrolled .top-banner {
+        padding: 5px 0;
+    }
+    
+    .header-wrapper.scrolled .main-header {
+        padding: 12px 0;
+    }
+    
+    .header-wrapper.scrolled .logo-img {
+        height: 38px;
+    }
     
     .hero-section {
         height: 500px;
@@ -67,6 +81,15 @@
         max-width: none;
     }
     
+    /* Compact header on scroll */
+    .header-wrapper.scrolled .header-search {
+        margin-top: 10px;
+    }
+    
+    .header-wrapper.scrolled .search-form input {
+        padding: 8px 15px;
+    }
+    
     /* Navigation */
     .nav-menu {
         flex-wrap: wrap;
@@ -75,6 +98,11 @@
     .nav-link {
         padding: 12px 15px;
         font-size: 13px;
+    }
+    
+    .header-wrapper.scrolled .nav-link {
+        padding: 10px 12px;
+        font-size: 12px;
     }
     
     .mega-menu {
@@ -126,6 +154,15 @@
         width: 350px;
         right: -350px;
     }
+    
+    /* Scroll padding adjustment */
+    html {
+        scroll-padding-top: 160px;
+    }
+    
+    .header-wrapper.scrolled ~ * {
+        scroll-padding-top: 130px;
+    }
 }
 
 /* ========================================
@@ -162,6 +199,11 @@
         font-size: 12px;
     }
     
+    .header-wrapper.scrolled .top-banner {
+        padding: 4px 0;
+        font-size: 11px;
+    }
+    
     .banner-left {
         flex: 1;
     }
@@ -181,8 +223,16 @@
         padding: 15px 0;
     }
     
+    .header-wrapper.scrolled .main-header {
+        padding: 10px 0;
+    }
+    
     .logo-img {
         height: 40px;
+    }
+    
+    .header-wrapper.scrolled .logo-img {
+        height: 35px;
     }
     
     .header-actions {
@@ -359,6 +409,15 @@
     .quick-view-actions .btn {
         width: 100%;
     }
+    
+    /* Scroll padding adjustment */
+    html {
+        scroll-padding-top: 140px;
+    }
+    
+    .header-wrapper.scrolled ~ * {
+        scroll-padding-top: 110px;
+    }
 }
 
 /* ========================================
@@ -384,6 +443,14 @@
         font-size: 11px;
     }
     
+    .header-wrapper.scrolled .top-banner {
+        padding: 3px 0;
+    }
+    
+    .header-wrapper.scrolled .banner-text {
+        font-size: 10px;
+    }
+    
     .banner-right {
         gap: 10px;
     }
@@ -393,12 +460,20 @@
         padding: 10px 0;
     }
     
+    .header-wrapper.scrolled .main-header {
+        padding: 8px 0;
+    }
+    
     .header-content {
         gap: 10px;
     }
     
     .logo-img {
         height: 35px;
+    }
+    
+    .header-wrapper.scrolled .logo-img {
+        height: 30px;
     }
     
     .header-search {
@@ -642,6 +717,15 @@
     .quick-view-description {
         font-size: 13px;
     }
+    
+    /* Scroll padding adjustment */
+    html {
+        scroll-padding-top: 120px;
+    }
+    
+    .header-wrapper.scrolled ~ * {
+        scroll-padding-top: 95px;
+    }
 }
 
 /* ========================================
@@ -700,6 +784,7 @@
     .footer-logo img,
     .mobile-logo {
         /* Keep original logo colors for print */
+        filter: none !important;
     }
     
     .main-header,
