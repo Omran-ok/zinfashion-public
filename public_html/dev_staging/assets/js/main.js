@@ -1,6 +1,7 @@
 /**
  * ZIN Fashion - Main JavaScript
  * Location: /public_html/dev_staging/assets/js/main.js
+ * Updated: Added header scroll behavior and fixed language dropdown
  */
 
 // ========================================
@@ -9,6 +10,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     initializeTheme();
     initializeLanguageSelector();
+    initializeHeaderScroll(); // New function
     initializeMobileMenu();
     initializeSearch();
     initializeNewsletterForm();
@@ -17,6 +19,57 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCartSidebar();
     ensureLogoColors();
 });
+
+// ========================================
+// Header Scroll Behavior - NEW
+// ========================================
+function initializeHeaderScroll() {
+    const headerWrapper = document.getElementById('headerWrapper');
+    let lastScrollY = window.scrollY;
+    let scrollThreshold = 50; // Pixels before adding scrolled class
+    
+    if (!headerWrapper) return;
+    
+    // Check scroll position on load
+    handleHeaderScroll();
+    
+    // Handle scroll event with throttling
+    let scrollTimer;
+    window.addEventListener('scroll', function() {
+        if (scrollTimer) {
+            window.cancelAnimationFrame(scrollTimer);
+        }
+        
+        scrollTimer = window.requestAnimationFrame(function() {
+            handleHeaderScroll();
+        });
+    });
+    
+    function handleHeaderScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Add/remove scrolled class based on scroll position
+        if (currentScrollY > scrollThreshold) {
+            headerWrapper.classList.add('scrolled');
+        } else {
+            headerWrapper.classList.remove('scrolled');
+        }
+        
+        // Optional: Hide header on scroll down, show on scroll up
+        // Uncomment if you want this behavior
+        /*
+        if (currentScrollY > lastScrollY && currentScrollY > 200) {
+            // Scrolling down & past 200px
+            headerWrapper.style.transform = 'translateY(-100%)';
+        } else {
+            // Scrolling up or at top
+            headerWrapper.style.transform = 'translateY(0)';
+        }
+        */
+        
+        lastScrollY = currentScrollY;
+    }
+}
 
 // ========================================
 // Ensure Logo Colors (Fix for any CSS conflicts)
@@ -75,43 +128,49 @@ function initializeTheme() {
 }
 
 // ========================================
-// Language Selector
+// Language Selector - UPDATED with z-index fix
 // ========================================
 function initializeLanguageSelector() {
     const langToggle = document.getElementById('langToggle');
     const langDropdown = document.getElementById('langDropdown');
     
-    if (langToggle && langDropdown) {
-        langToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            langDropdown.classList.toggle('active');
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            langDropdown.classList.remove('active');
-        });
-        
-        // Handle language selection
-        const langOptions = langDropdown.querySelectorAll('.lang-option');
-        langOptions.forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.preventDefault();
-                const lang = this.href.split('lang=')[1];
-                changeLanguage(lang);
-            });
-        });
-    }
-}
-
-function changeLanguage(lang) {
-    // Set language cookie
-    document.cookie = `language=${lang};path=/;max-age=31536000`;
+    if (!langToggle || !langDropdown) return;
     
-    // Update URL with language parameter
-    const url = new URL(window.location.href);
-    url.searchParams.set('lang', lang);
-    window.location.href = url.toString();
+    langToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isActive = langDropdown.classList.contains('active');
+        
+        if (!isActive) {
+            // Force show dropdown with inline styles
+            langDropdown.classList.add('active');
+            langDropdown.style.cssText = `
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                z-index: 999999 !important;
+                position: absolute !important;
+                top: 100% !important;
+                right: 0 !important;
+                margin-top: 5px !important;
+                pointer-events: auto !important;
+                transform: translateY(0) !important;
+            `;
+        } else {
+            // Hide dropdown
+            langDropdown.classList.remove('active');
+            langDropdown.style.cssText = '';
+        }
+    });
+    
+    // Close when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.language-selector')) {
+            langDropdown.classList.remove('active');
+            langDropdown.style.cssText = '';
+        }
+    });
 }
 
 // ========================================
@@ -121,24 +180,33 @@ function initializeMobileMenu() {
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const mobileMenu = document.getElementById('mobileMenu');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
-    const overlay = document.createElement('div');
-    overlay.className = 'mobile-menu-overlay';
-    document.body.appendChild(overlay);
+    
+    // Create overlay if it doesn't exist
+    let overlay = document.querySelector('.mobile-menu-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'mobile-menu-overlay';
+        document.body.appendChild(overlay);
+    }
     
     if (mobileMenuToggle && mobileMenu) {
         mobileMenuToggle.addEventListener('click', function() {
             mobileMenu.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
+            this.classList.add('active');
         });
         
-        mobileMenuClose.addEventListener('click', closeMobileMenu);
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+        }
         overlay.addEventListener('click', closeMobileMenu);
         
         function closeMobileMenu() {
             mobileMenu.classList.remove('active');
             overlay.classList.remove('active');
             document.body.style.overflow = '';
+            mobileMenuToggle.classList.remove('active');
         }
         
         // Mobile submenu toggles
@@ -146,6 +214,7 @@ function initializeMobileMenu() {
         mobileNavToggles.forEach(toggle => {
             toggle.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 const parent = this.closest('.mobile-nav-item');
                 parent.classList.toggle('active');
             });
@@ -274,61 +343,85 @@ function initializeNewsletterForm() {
 // Back to Top Button
 // ========================================
 function initializeBackToTop() {
-    const backToTop = document.getElementById('backToTop');
+    let backToTop = document.getElementById('backToTop');
     
-    if (backToTop) {
-        // Show/hide button based on scroll position
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > 300) {
-                backToTop.classList.add('visible');
-            } else {
-                backToTop.classList.remove('visible');
-            }
-        });
-        
-        // Scroll to top when clicked
-        backToTop.addEventListener('click', function() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        });
+    // Create button if it doesn't exist
+    if (!backToTop) {
+        backToTop = document.createElement('button');
+        backToTop.id = 'backToTop';
+        backToTop.className = 'back-to-top';
+        backToTop.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        backToTop.setAttribute('aria-label', 'Back to top');
+        document.body.appendChild(backToTop);
     }
+    
+    // Show/hide button based on scroll position
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+        } else {
+            backToTop.classList.remove('visible');
+        }
+    });
+    
+    // Scroll to top when clicked
+    backToTop.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
 }
 
 // ========================================
 // Cookie Notice
 // ========================================
 function initializeCookieNotice() {
-    const cookieNotice = document.getElementById('cookieNotice');
+    let cookieNotice = document.getElementById('cookieNotice');
+    
+    // Create cookie notice if it doesn't exist
+    if (!cookieNotice) {
+        cookieNotice = document.createElement('div');
+        cookieNotice.id = 'cookieNotice';
+        cookieNotice.className = 'cookie-notice';
+        cookieNotice.innerHTML = `
+            <div class="cookie-content">
+                <p>We use cookies to enhance your shopping experience. By continuing to browse, you agree to our use of cookies.</p>
+                <div class="cookie-actions">
+                    <button id="cookieAccept" class="btn btn-primary btn-small">Accept</button>
+                    <button id="cookieDecline" class="btn btn-outline btn-small">Decline</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(cookieNotice);
+    }
+    
     const cookieAccept = document.getElementById('cookieAccept');
     const cookieDecline = document.getElementById('cookieDecline');
     
-    if (cookieNotice) {
-        // Check if user has already made a choice
-        const cookieChoice = localStorage.getItem('cookieConsent');
-        
-        if (!cookieChoice) {
-            setTimeout(() => {
-                cookieNotice.classList.add('show');
-            }, 2000);
-        }
-        
-        if (cookieAccept) {
-            cookieAccept.addEventListener('click', function() {
-                localStorage.setItem('cookieConsent', 'accepted');
-                cookieNotice.classList.remove('show');
-                // Initialize analytics and tracking
-                initializeAnalytics();
-            });
-        }
-        
-        if (cookieDecline) {
-            cookieDecline.addEventListener('click', function() {
-                localStorage.setItem('cookieConsent', 'declined');
-                cookieNotice.classList.remove('show');
-            });
-        }
+    // Check if user has already made a choice
+    const cookieChoice = localStorage.getItem('cookieConsent');
+    
+    if (!cookieChoice) {
+        setTimeout(() => {
+            cookieNotice.classList.add('show');
+        }, 2000);
+    }
+    
+    if (cookieAccept) {
+        cookieAccept.addEventListener('click', function() {
+            localStorage.setItem('cookieConsent', 'accepted');
+            cookieNotice.classList.remove('show');
+            // Initialize analytics and tracking
+            initializeAnalytics();
+        });
+    }
+    
+    if (cookieDecline) {
+        cookieDecline.addEventListener('click', function() {
+            localStorage.setItem('cookieConsent', 'declined');
+            cookieNotice.classList.remove('show');
+        });
     }
 }
 
@@ -750,49 +843,40 @@ function showNotification(message, type = 'info') {
         <span>${message}</span>
     `;
     
+    // Style for notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 9999;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+    `;
+    
     // Add to page
     document.body.appendChild(notification);
     
     // Show with animation
     setTimeout(() => {
-        notification.classList.add('show');
+        notification.style.transform = 'translateX(0)';
     }, 10);
     
     // Remove after 3 seconds
     setTimeout(() => {
-        notification.classList.remove('show');
+        notification.style.transform = 'translateX(400px)';
         setTimeout(() => {
             notification.remove();
         }, 300);
     }, 3000);
 }
-
-// ========================================
-// Mobile Menu Overlay Styles
-// ========================================
-const mobileMenuStyles = `
-    .mobile-menu-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1002;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-    }
-    .mobile-menu-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
-`;
-
-// Add mobile menu styles to page
-const styleSheet = document.createElement('style');
-styleSheet.textContent = mobileMenuStyles;
-document.head.appendChild(styleSheet);
 
 // ========================================
 // Make functions globally available
