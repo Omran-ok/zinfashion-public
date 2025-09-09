@@ -192,7 +192,6 @@ $menuCategories = $menuStmt->fetchAll();
             <li class="nav-item">
                 <a href="/sale" class="nav-link nav-sale">
                     <span><?= $lang['sale'] ?? 'Sale' ?></span>
-                    <span class="sale-badge"><?= $lang['hot'] ?? 'HOT' ?></span>
                 </a>
             </li>
             
