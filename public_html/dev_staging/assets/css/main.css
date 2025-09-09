@@ -1,6 +1,7 @@
 /**
  * ZIN Fashion - Main Styles
  * Location: /public_html/dev_staging/assets/css/main.css
+ * Updated: Added header wrapper and fixed z-index hierarchy
  */
 
 /* ========================================
@@ -171,6 +172,22 @@ a:hover {
 }
 
 /* ========================================
+   HEADER WRAPPER - NEW
+   ======================================== */
+
+.header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
+}
+
+.header-wrapper.scrolled {
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+}
+
+/* ========================================
    Top Banner
    ======================================== */
 
@@ -180,6 +197,13 @@ a:hover {
     font-size: 14px;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Compact mode when scrolled */
+.header-wrapper.scrolled .top-banner {
+    padding: 5px 0;
+    font-size: 13px;
 }
 
 .top-banner::before {
@@ -266,10 +290,10 @@ a:hover {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-md);
-    z-index: 1000;
+    z-index: 1100; /* Increased from 1000 */
 }
 
-.language-selector:hover .lang-dropdown {
+.lang-dropdown.active {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -326,9 +350,13 @@ body.theme-light #themeIconDark { display: none; }
     background: var(--bg-secondary);
     padding: 20px 0;
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 999;
+    position: relative; /* Changed from sticky */
+    transition: all 0.3s ease;
+}
+
+/* Compact mode when scrolled */
+.header-wrapper.scrolled .main-header {
+    padding: 15px 0;
 }
 
 .header-content {
@@ -345,12 +373,16 @@ body.theme-light #themeIconDark { display: none; }
 .logo-img {
     height: 50px;
     width: auto;
-    filter: brightness(0) invert(1);
-    transition: transform 0.3s ease;
+    filter: none !important; /* Ensure logo keeps original colors */
+    transition: transform 0.3s ease, height 0.3s ease;
+}
+
+.header-wrapper.scrolled .logo-img {
+    height: 40px; /* Reduced from 50px */
 }
 
 body.theme-light .logo-img {
-    filter: none;
+    filter: none !important;
 }
 
 .header-logo:hover .logo-img {
@@ -387,6 +419,11 @@ body.theme-light .logo-img {
     color: var(--text-primary);
     font-size: 14px;
     outline: none;
+    transition: padding 0.3s ease;
+}
+
+.header-wrapper.scrolled .search-form input {
+    padding: 10px 18px; /* Reduced padding */
 }
 
 .search-form input::placeholder {
@@ -472,7 +509,7 @@ body.theme-light .logo-img {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-lg);
-    z-index: 1000;
+    z-index: 1100; /* Increased from 1000 */
 }
 
 .header-action-item:hover .account-dropdown {
@@ -533,6 +570,7 @@ body.theme-light .logo-img {
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);
     position: relative;
+    transition: all 0.3s ease;
 }
 
 .nav-menu {
@@ -541,6 +579,7 @@ body.theme-light .logo-img {
     list-style: none;
     margin: 0;
     padding: 0;
+    justify-content: center;
 }
 
 .nav-item {
@@ -558,6 +597,12 @@ body.theme-light .logo-img {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
+}
+
+/* Compact navigation when scrolled */
+.header-wrapper.scrolled .nav-link {
+    padding: 12px 18px;
+    font-size: 13px;
 }
 
 .nav-link:hover {
@@ -595,7 +640,7 @@ body.theme-light .logo-img {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-lg);
-    z-index: 998;
+    z-index: 1099; /* Increased from 998 */
 }
 
 .nav-item:hover .mega-menu {
@@ -669,6 +714,19 @@ body.theme-light .logo-img {
 .promo-content h5 {
     color: white;
     margin-bottom: 10px;
+}
+
+/* ========================================
+   Smooth scroll padding for sticky header
+   ======================================== */
+
+html {
+    scroll-padding-top: 180px; /* Adjust based on header height */
+}
+
+.header-wrapper.scrolled ~ * {
+    /* Adjust scroll padding when header is compact */
+    scroll-padding-top: 140px;
 }
 
 /* ========================================
@@ -808,7 +866,7 @@ section {
 }
 
 .section-footer {
-    justify-items: center;
+    text-align: center;
 }
 
 .section-title::after {
@@ -1285,11 +1343,11 @@ body.theme-light .btn-newsletter:hover {
 
 .footer-logo img {
     height: 40px;
-    filter: brightness(0) invert(1);
+    filter: none !important;
 }
 
 body.theme-light .footer-logo img {
-    filter: none;
+    filter: none !important;
 }
 
 .footer-description {
@@ -1428,7 +1486,7 @@ body.theme-light .footer-logo img {
     height: 100%;
     background: var(--bg-card);
     box-shadow: -5px 0 20px rgba(0,0,0,0.3);
-    z-index: 1001;
+    z-index: 1201; /* Increased from 1001 */
     transition: right 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -1500,7 +1558,7 @@ body.theme-light .footer-logo img {
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 1000;
+    z-index: 1200; /* Increased from 1000 */
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
@@ -1532,7 +1590,7 @@ body.theme-light .footer-logo img {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 999;
+    z-index: 998;
 }
 
 .back-to-top.visible {
@@ -1557,7 +1615,7 @@ body.theme-light .footer-logo img {
     background: var(--bg-tertiary);
     border-top: 2px solid var(--gold-primary);
     padding: 20px;
-    z-index: 1002;
+    z-index: 1202; /* Increased from 1002 */
     transform: translateY(100%);
     transition: transform 0.3s ease;
 }
@@ -1630,7 +1688,7 @@ body.theme-light .footer-logo img {
     max-width: 320px;
     height: 100%;
     background: var(--bg-card);
-    z-index: 1003;
+    z-index: 1200; /* Increased from 1003 */
     transition: left 0.3s ease;
     overflow-y: auto;
 }
@@ -1757,6 +1815,87 @@ body.theme-light .footer-logo img {
 
 .mobile-account-link i {
     color: var(--gold-primary);
+}
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1199;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ========================================
+   LANGUAGE SELECTOR FIX
+   ======================================== */
+
+.language-selector {
+    position: relative;
+    z-index: 1101; /* Ensure selector itself has high z-index */
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 5px); /* Clear positioning */
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 150px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 99999 !important; /* Maximum z-index with !important */
+    
+    /* Hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+/* Active state - force visibility */
+.lang-dropdown.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+}
+
+/* Remove hover behavior to avoid conflicts */
+.language-selector:hover .lang-dropdown {
+    /* Do nothing on hover - controlled by JavaScript */
+}
+
+/* Ensure dropdown appears above everything */
+.header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
+}
+
+/* Top banner should not overflow */
+.top-banner {
+    position: relative;
+    overflow: visible; /* Changed from hidden to visible */
+    z-index: 1000;
+}
+
+.banner-right {
+    position: relative;
+    z-index: 1001;
 }
 
 /* ========================================
