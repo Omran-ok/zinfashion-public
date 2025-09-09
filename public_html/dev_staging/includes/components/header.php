@@ -21,194 +21,198 @@ $menuStmt = $pdo->query($menuSql);
 $menuCategories = $menuStmt->fetchAll();
 ?>
 
-<!-- Top Banner -->
-<div class="top-banner">
-    <div class="container">
-        <div class="top-banner-content">
-            <div class="banner-left">
-                <span class="banner-text"><?= $lang['free_shipping_banner'] ?? 'Free shipping on orders over €50' ?></span>
-            </div>
-            <div class="banner-right">
-                <!-- Language Selector -->
-                <div class="language-selector">
-                    <button class="lang-current" id="langToggle">
-                        <span class="flag flag-<?= $currentLang ?>"></span>
-                        <span><?= strtoupper($currentLang) ?></span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="lang-dropdown" id="langDropdown">
-                        <a href="?lang=de" class="lang-option <?= $currentLang === 'de' ? 'active' : '' ?>">
-                            <span class="flag flag-de"></span>
-                            <span>Deutsch</span>
-                        </a>
-                        <a href="?lang=en" class="lang-option <?= $currentLang === 'en' ? 'active' : '' ?>">
-                            <span class="flag flag-en"></span>
-                            <span>English</span>
-                        </a>
-                        <a href="?lang=ar" class="lang-option <?= $currentLang === 'ar' ? 'active' : '' ?>">
-                            <span class="flag flag-ar"></span>
-                            <span>العربية</span>
-                        </a>
-                    </div>
+<!-- Header Wrapper for Sticky Behavior -->
+<div class="header-wrapper" id="headerWrapper">
+    <!-- Top Banner -->
+    <div class="top-banner">
+        <div class="container">
+            <div class="top-banner-content">
+                <div class="banner-left">
+                    <span class="banner-text"><?= $lang['free_shipping_banner'] ?? 'Free shipping on orders over €50' ?></span>
                 </div>
-                
-                <!-- Theme Toggle -->
-                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                    <i class="fas fa-sun" id="themeIconLight"></i>
-                    <i class="fas fa-moon" id="themeIconDark"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Main Header -->
-<header class="main-header">
-    <div class="container">
-        <div class="header-content">
-            <!-- Logo -->
-            <div class="header-logo">
-                <a href="/">
-                    <img src="/assets/images/logo.svg" alt="ZIN Fashion" class="logo-img">
-                </a>
-            </div>
-            
-            <!-- Search Bar -->
-            <div class="header-search">
-                <form class="search-form" action="/search" method="GET">
-                    <input type="text" name="q" placeholder="<?= $lang['search_placeholder'] ?? 'Search for products...' ?>" 
-                           autocomplete="off" id="searchInput">
-                    <button type="submit" aria-label="Search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </form>
-                <div class="search-suggestions" id="searchSuggestions"></div>
-            </div>
-            
-            <!-- Header Actions -->
-            <div class="header-actions">
-                <!-- Account -->
-                <div class="header-action-item">
-                    <a href="/account" class="action-link">
-                        <i class="far fa-user"></i>
-                        <span class="action-text"><?= $lang['account'] ?? 'Account' ?></span>
-                    </a>
-                    <div class="account-dropdown">
-                        <?php if (isLoggedIn()): ?>
-                            <a href="/account/dashboard"><?= $lang['my_account'] ?? 'My Account' ?></a>
-                            <a href="/account/orders"><?= $lang['my_orders'] ?? 'My Orders' ?></a>
-                            <a href="/account/wishlist"><?= $lang['my_wishlist'] ?? 'My Wishlist' ?></a>
-                            <a href="/logout"><?= $lang['logout'] ?? 'Logout' ?></a>
-                        <?php else: ?>
-                            <a href="/login"><?= $lang['login'] ?? 'Login' ?></a>
-                            <a href="/register"><?= $lang['register'] ?? 'Register' ?></a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <!-- Wishlist -->
-                <div class="header-action-item">
-                    <a href="/wishlist" class="action-link">
-                        <i class="far fa-heart"></i>
-                        <span class="action-text"><?= $lang['wishlist'] ?? 'Wishlist' ?></span>
-                        <?php if ($wishlistCount > 0): ?>
-                        <span class="action-badge" id="wishlistCount"><?= $wishlistCount ?></span>
-                        <?php endif; ?>
-                    </a>
-                </div>
-                
-                <!-- Cart -->
-                <div class="header-action-item">
-                    <a href="/cart" class="action-link" id="cartTrigger">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span class="action-text"><?= $lang['cart'] ?? 'Cart' ?></span>
-                        <?php if ($cartCount > 0): ?>
-                        <span class="action-badge" id="cartCount"><?= $cartCount ?></span>
-                        <?php endif; ?>
-                    </a>
-                </div>
-                
-                <!-- Mobile Menu Toggle -->
-                <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-            </div>
-        </div>
-    </div>
-</header>
-
-<!-- Navigation Menu -->
-<nav class="main-navigation">
-    <div class="container">
-        <ul class="nav-menu">
-            <!-- Categories with Mega Menu -->
-            <?php foreach ($menuCategories as $category): 
-                $categoryName = $category['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $category['category_name'];
-                $subcategories = $category['subcategories'] ? explode('|', $category['subcategories']) : [];
-            ?>
-            <li class="nav-item has-mega-menu">
-                <a href="/category/<?= htmlspecialchars($category['slug']) ?>" class="nav-link">
-                    <?= htmlspecialchars($categoryName) ?>
-                    <?php if (!empty($subcategories)): ?>
-                    <i class="fas fa-chevron-down"></i>
-                    <?php endif; ?>
-                </a>
-                <?php if (!empty($subcategories)): ?>
-                <div class="mega-menu">
-                    <div class="mega-menu-content">
-                        <div class="mega-menu-column">
-                            <h4><?= htmlspecialchars($categoryName) ?></h4>
-                            <ul>
-                                <?php foreach ($subcategories as $subcat): 
-                                    list($subId, $subName, $subSlug) = explode(':', $subcat);
-                                ?>
-                                <li>
-                                    <a href="/category/<?= htmlspecialchars($subSlug) ?>">
-                                        <?= htmlspecialchars($subName) ?>
-                                    </a>
-                                </li>
-                                <?php endforeach; ?>
-                            </ul>
+                <div class="banner-right">
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <button class="lang-current" id="langToggle">
+                            <span class="flag flag-<?= $currentLang ?>"></span>
+                            <span><?= strtoupper($currentLang) ?></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="lang-dropdown" id="langDropdown">
+                            <a href="?lang=de" class="lang-option <?= $currentLang === 'de' ? 'active' : '' ?>">
+                                <span class="flag flag-de"></span>
+                                <span>Deutsch</span>
+                            </a>
+                            <a href="?lang=en" class="lang-option <?= $currentLang === 'en' ? 'active' : '' ?>">
+                                <span class="flag flag-en"></span>
+                                <span>English</span>
+                            </a>
+                            <a href="?lang=ar" class="lang-option <?= $currentLang === 'ar' ? 'active' : '' ?>">
+                                <span class="flag flag-ar"></span>
+                                <span>العربية</span>
+                            </a>
                         </div>
-                        <div class="mega-menu-promo">
-                            <img src="/assets/images/mega-menu/<?= htmlspecialchars($category['slug']) ?>.jpg" 
-                                 alt="<?= htmlspecialchars($categoryName) ?>">
-                            <div class="promo-content">
-                                <h5><?= $lang['new_collection'] ?? 'New Collection' ?></h5>
-                                <a href="/category/<?= htmlspecialchars($category['slug']) ?>/new" class="btn btn-small">
-                                    <?= $lang['shop_now'] ?? 'Shop Now' ?>
-                                </a>
+                    </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <i class="fas fa-sun" id="themeIconLight"></i>
+                        <i class="fas fa-moon" id="themeIconDark"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <!-- Logo -->
+                <div class="header-logo">
+                    <a href="/">
+                        <img src="/assets/images/logo.svg" alt="ZIN Fashion" class="logo-img">
+                    </a>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="header-search">
+                    <form class="search-form" action="/search" method="GET">
+                        <input type="text" name="q" placeholder="<?= $lang['search_placeholder'] ?? 'Search for products...' ?>" 
+                               autocomplete="off" id="searchInput">
+                        <button type="submit" aria-label="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    <div class="search-suggestions" id="searchSuggestions"></div>
+                </div>
+                
+                <!-- Header Actions -->
+                <div class="header-actions">
+                    <!-- Account -->
+                    <div class="header-action-item">
+                        <a href="/account" class="action-link">
+                            <i class="far fa-user"></i>
+                            <span class="action-text"><?= $lang['account'] ?? 'Account' ?></span>
+                        </a>
+                        <div class="account-dropdown">
+                            <?php if (isLoggedIn()): ?>
+                                <a href="/account/dashboard"><?= $lang['my_account'] ?? 'My Account' ?></a>
+                                <a href="/account/orders"><?= $lang['my_orders'] ?? 'My Orders' ?></a>
+                                <a href="/account/wishlist"><?= $lang['my_wishlist'] ?? 'My Wishlist' ?></a>
+                                <a href="/logout"><?= $lang['logout'] ?? 'Logout' ?></a>
+                            <?php else: ?>
+                                <a href="/login"><?= $lang['login'] ?? 'Login' ?></a>
+                                <a href="/register"><?= $lang['register'] ?? 'Register' ?></a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Wishlist -->
+                    <div class="header-action-item">
+                        <a href="/wishlist" class="action-link">
+                            <i class="far fa-heart"></i>
+                            <span class="action-text"><?= $lang['wishlist'] ?? 'Wishlist' ?></span>
+                            <?php if ($wishlistCount > 0): ?>
+                            <span class="action-badge" id="wishlistCount"><?= $wishlistCount ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    
+                    <!-- Cart -->
+                    <div class="header-action-item">
+                        <a href="/cart" class="action-link" id="cartTrigger">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span class="action-text"><?= $lang['cart'] ?? 'Cart' ?></span>
+                            <?php if ($cartCount > 0): ?>
+                            <span class="action-badge" id="cartCount"><?= $cartCount ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    
+                    <!-- Mobile Menu Toggle -->
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="main-navigation">
+        <div class="container">
+            <ul class="nav-menu">
+                <!-- Categories with Mega Menu -->
+                <?php foreach ($menuCategories as $category): 
+                    $categoryName = $category['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $category['category_name'];
+                    $subcategories = $category['subcategories'] ? explode('|', $category['subcategories']) : [];
+                ?>
+                <li class="nav-item has-mega-menu">
+                    <a href="/category/<?= htmlspecialchars($category['slug']) ?>" class="nav-link">
+                        <?= htmlspecialchars($categoryName) ?>
+                        <?php if (!empty($subcategories)): ?>
+                        <i class="fas fa-chevron-down"></i>
+                        <?php endif; ?>
+                    </a>
+                    <?php if (!empty($subcategories)): ?>
+                    <div class="mega-menu">
+                        <div class="mega-menu-content">
+                            <div class="mega-menu-column">
+                                <h4><?= htmlspecialchars($categoryName) ?></h4>
+                                <ul>
+                                    <?php foreach ($subcategories as $subcat): 
+                                        list($subId, $subName, $subSlug) = explode(':', $subcat);
+                                    ?>
+                                    <li>
+                                        <a href="/category/<?= htmlspecialchars($subSlug) ?>">
+                                            <?= htmlspecialchars($subName) ?>
+                                        </a>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <div class="mega-menu-promo">
+                                <img src="/assets/images/mega-menu/<?= htmlspecialchars($category['slug']) ?>.jpg" 
+                                     alt="<?= htmlspecialchars($categoryName) ?>">
+                                <div class="promo-content">
+                                    <h5><?= $lang['new_collection'] ?? 'New Collection' ?></h5>
+                                    <a href="/category/<?= htmlspecialchars($category['slug']) ?>/new" class="btn btn-small">
+                                        <?= $lang['shop_now'] ?? 'Shop Now' ?>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <?php endif; ?>
-            </li>
-            <?php endforeach; ?>
-            
-            <!-- Sale Link -->
-            <li class="nav-item">
-                <a href="/sale" class="nav-link nav-sale">
-                    <span><?= $lang['sale'] ?? 'Sale' ?></span>
-                </a>
-            </li>
-            
-            <!-- About Us -->
-            <li class="nav-item">
-                <a href="/about" class="nav-link"><?= $lang['about_us'] ?? 'About Us' ?></a>
-            </li>
-            
-            <!-- Contact -->
-            <li class="nav-item">
-                <a href="/contact" class="nav-link"><?= $lang['contact'] ?? 'Contact' ?></a>
-            </li>
-        </ul>
-    </div>
-</nav>
+                    <?php endif; ?>
+                </li>
+                <?php endforeach; ?>
+                
+                <!-- Sale Link -->
+                <li class="nav-item">
+                    <a href="/sale" class="nav-link nav-sale">
+                        <span><?= $lang['sale'] ?? 'Sale' ?></span>
+                    </a>
+                </li>
+                
+                <!-- About Us -->
+                <li class="nav-item">
+                    <a href="/about" class="nav-link"><?= $lang['about_us'] ?? 'About Us' ?></a>
+                </li>
+                
+                <!-- Contact -->
+                <li class="nav-item">
+                    <a href="/contact" class="nav-link"><?= $lang['contact'] ?? 'Contact' ?></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+<!-- End of Header Wrapper -->
 
-<!-- Mobile Menu -->
+<!-- Mobile Menu (Outside of wrapper) -->
 <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu-header">
         <img src="/assets/images/logo.svg" alt="ZIN Fashion" class="mobile-logo">
@@ -279,7 +283,7 @@ $menuCategories = $menuStmt->fetchAll();
     </div>
 </div>
 
-<!-- Cart Sidebar -->
+<!-- Cart Sidebar (Outside of wrapper) -->
 <div class="cart-sidebar" id="cartSidebar">
     <div class="cart-sidebar-header">
         <h3><?= $lang['shopping_cart'] ?? 'Shopping Cart' ?></h3>
