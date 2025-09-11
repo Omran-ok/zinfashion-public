@@ -2,21 +2,12 @@
 /**
  * ZIN Fashion - Homepage
  * Location: /public_html/dev_staging/index.php
+ * Updated: Added badge-based sorting for featured products
  */
 
 session_start();
 require_once 'includes/config.php';
-
-// Get current language from session or default to German
-$currentLang = $_SESSION['language'] ?? 'de';
-
-// Include language files
-$langFile = "includes/languages/{$currentLang}.php";
-if (file_exists($langFile)) {
-    require_once $langFile;
-} else {
-    require_once "includes/languages/de.php";
-}
+require_once 'includes/language-handler.php';
 
 $pdo = getDBConnection();
 
@@ -34,7 +25,7 @@ $featuredSql = "SELECT p.*, pi.image_url, c.category_name, c.slug as category_sl
                         ELSE 4
                     END,
                     p.created_at DESC
-                LIMIT 8";
+                LIMIT 20";
 $featuredStmt = $pdo->query($featuredSql);
 $featuredProducts = $featuredStmt->fetchAll();
 
@@ -69,7 +60,6 @@ $mainCategories = $categoriesStmt->fetchAll();
     
     <!-- Main Styles -->
     <link rel="stylesheet" href="/assets/css/main.css">
-    <link rel="stylesheet" href="/assets/css/animations.css">
     <link rel="stylesheet" href="/assets/css/responsive.css">
     
     <!-- RTL Support -->
@@ -129,18 +119,35 @@ $mainCategories = $categoriesStmt->fetchAll();
         </div>
     </section>
     
-    <!-- Featured Products Section -->
+    <!-- Featured Products Section with Badge Filtering -->
     <section class="featured-products-section">
         <div class="container">
             <h2 class="section-title animate-on-scroll"><?= $lang['featured_products'] ?? 'Featured Products' ?></h2>
-            <div class="products-grid">
+            
+            <!-- Badge Filter Buttons -->
+            <div class="product-filters">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-th"></i> <?= $lang['filter_all'] ?? 'All' ?>
+                </button>
+                <button class="filter-btn" data-filter="new">
+                    <i class="fas fa-star"></i></i> <?= $lang['filter_new'] ?? 'New' ?>
+                </button>
+                <button class="filter-btn" data-filter="sale">
+                    <i class="fas fa-tag"></i> <?= $lang['filter_sale'] ?? 'Sale' ?>
+                </button>
+                <button class="filter-btn" data-filter="bestseller">
+                    <i class="fas fa-fire"></i> <?= $lang['filter_bestseller'] ?? 'Bestseller' ?>
+                </button>
+            </div>
+            
+            <div class="products-grid" id="featuredProductsGrid">
                 <?php foreach ($featuredProducts as $product): 
                     $productName = $product['product_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $product['product_name'];
                     $price = $product['sale_price'] ?: $product['base_price'];
                     $originalPrice = $product['sale_price'] ? $product['base_price'] : null;
                     $discountPercent = $originalPrice ? round((($originalPrice - $price) / $originalPrice) * 100) : 0;
                 ?>
-                <div class="product-card animate-on-scroll">
+                <div class="product-card animate-on-scroll" data-badge="<?= htmlspecialchars($product['badge'] ?? 'none') ?>">
                     <?php if ($product['badge']): ?>
                     <span class="product-badge badge-<?= htmlspecialchars($product['badge']) ?>">
                         <?php if ($product['badge'] === 'sale' && $discountPercent > 0): ?>
@@ -186,6 +193,7 @@ $mainCategories = $categoriesStmt->fetchAll();
                 </div>
                 <?php endforeach; ?>
             </div>
+            
             <div class="section-footer">
                 <a href="/shop" class="btn btn-primary btn-large animate-on-scroll">
                     <?= $lang['view_all_products'] ?? 'View All Products' ?>
@@ -260,5 +268,6 @@ $mainCategories = $categoriesStmt->fetchAll();
     <script src="/assets/js/animations.js"></script>
     <script src="/assets/js/slider.js"></script>
     <script src="/assets/js/cart.js"></script>
+    <script src="/assets/js/product-filters.js"></script>
 </body>
 </html>
