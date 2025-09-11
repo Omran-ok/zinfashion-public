@@ -1,6 +1,7 @@
 /**
  * ZIN Fashion - RTL Support for Arabic
  * Location: /public_html/dev_staging/assets/css/rtl.css
+ * Updated: Only animations disabled, layout preserved
  */
 
 /* ========================================
@@ -13,6 +14,43 @@ html[dir="rtl"] {
 
 html[dir="rtl"] body {
     font-family: 'Tajawal', 'Poppins', sans-serif;
+}
+
+/* ========================================
+   Disable Animations Only for RTL
+   ======================================== */
+html[dir="rtl"] .animate-on-scroll,
+html[dir="rtl"] .animate-fade-up,
+html[dir="rtl"] .animate-fade-up-delay,
+html[dir="rtl"] .animate-fade-up-delay-2 {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: opacity 0.3s ease, color 0.3s ease, background-color 0.3s ease !important;
+}
+
+/* Disable shimmer animations */
+html[dir="rtl"] .newsletter-section::before,
+html[dir="rtl"] .top-banner::before {
+    animation: none !important;
+    display: none !important;
+}
+
+/* Disable button gradient animations */
+html[dir="rtl"] .btn::before,
+html[dir="rtl"] .filter-btn::before {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Disable hero slider animations */
+html[dir="rtl"] .glass-box {
+    animation: none !important;
+}
+
+/* Disable parallax */
+html[dir="rtl"] [data-parallax] {
+    transform: none !important;
 }
 
 /* ========================================
@@ -138,12 +176,6 @@ html[dir="rtl"] .mega-menu-column a:hover {
     transform: translateX(-5px);
 }
 
-/* Sale Badge */
-html[dir="rtl"] .sale-badge {
-    right: auto;
-    left: 5px;
-}
-
 /* ========================================
    Hero Section RTL
    ======================================== */
@@ -176,6 +208,15 @@ html[dir="rtl"] .btn-add-to-cart i {
     margin-left: 8px;
 }
 
+/* Disable hover transforms but keep other hover effects */
+html[dir="rtl"] .product-card:hover {
+    transform: none !important;
+}
+
+html[dir="rtl"] .product-card:hover .product-image img {
+    transform: scale(1.1);
+}
+
 /* ========================================
    Categories RTL
    ======================================== */
@@ -183,11 +224,28 @@ html[dir="rtl"] .category-overlay {
     text-align: right;
 }
 
+/* Disable hover lift but keep image zoom */
+html[dir="rtl"] .category-card:hover {
+    transform: none !important;
+}
+
+html[dir="rtl"] .category-card:hover .category-image {
+    transform: scale(1.1);
+}
+
 /* ========================================
    Features Section RTL
    ======================================== */
 html[dir="rtl"] .features-grid {
     direction: rtl;
+}
+
+html[dir="rtl"] .feature-card:hover {
+    transform: none !important;
+}
+
+html[dir="rtl"] .feature-card:hover .feature-icon {
+    transform: rotate(360deg);
 }
 
 /* ========================================
@@ -258,15 +316,6 @@ html[dir="rtl"] .cart-total {
     flex-direction: row-reverse;
 }
 
-html[dir="rtl"] .free-shipping-notice {
-    flex-direction: row-reverse;
-}
-
-html[dir="rtl"] .free-shipping-notice i {
-    margin-right: 0;
-    margin-left: 10px;
-}
-
 /* ========================================
    Mobile Menu RTL
    ======================================== */
@@ -314,6 +363,22 @@ html[dir="rtl"] .mobile-account-link i {
 }
 
 /* ========================================
+   Product Filters RTL
+   ======================================== */
+html[dir="rtl"] .product-filters {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .filter-btn {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .filter-btn i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+/* ========================================
    Modals RTL
    ======================================== */
 html[dir="rtl"] .modal-close {
@@ -327,25 +392,6 @@ html[dir="rtl"] .quick-view-content {
 
 html[dir="rtl"] .quick-view-actions {
     flex-direction: row-reverse;
-}
-
-/* ========================================
-   Notifications RTL
-   ======================================== */
-html[dir="rtl"] .notification {
-    right: auto;
-    left: 20px;
-    flex-direction: row-reverse;
-    transform: translateX(-400px);
-}
-
-html[dir="rtl"] .notification.show {
-    transform: translateX(0);
-}
-
-html[dir="rtl"] .notification i {
-    margin-right: 0;
-    margin-left: 10px;
 }
 
 /* ========================================
@@ -393,42 +439,8 @@ html[dir="rtl"] .btn i {
     margin-left: 8px;
 }
 
-html[dir="rtl"] .btn::before {
-    left: auto;
-    right: -100%;
-}
-
-html[dir="rtl"] .btn:hover::before {
-    right: 0;
-}
-
-/* ========================================
-   Animations RTL
-   ======================================== */
-html[dir="rtl"] @keyframes slideIn {
-    from {
-        transform: translateX(100%);
-    }
-    to {
-        transform: translateX(0);
-    }
-}
-
-html[dir="rtl"] @keyframes slideOut {
-    from {
-        transform: translateX(0);
-    }
-    to {
-        transform: translateX(-100%);
-    }
-}
-
-html[dir="rtl"] .animate-slide-right {
-    animation: slideIn 0.3s ease;
-}
-
-html[dir="rtl"] .animate-slide-left {
-    animation: slideOut 0.3s ease;
+html[dir="rtl"] .btn:hover {
+    transform: translateY(-2px);
 }
 
 /* ========================================
