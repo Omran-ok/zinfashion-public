@@ -40,6 +40,12 @@ $lang = [
     'shop_by_category' => 'التسوق حسب الفئة',
     'products' => 'منتجات',
     
+    // Product Filters
+    'filter_all' => 'الكل',
+    'filter_new' => 'جديد',
+    'filter_sale' => 'تخفيضات',
+    'filter_bestseller' => 'الأكثر مبيعاً',
+    
     // Featured Products
     'featured_products' => 'المنتجات المميزة',
     'add_to_cart' => 'أضف إلى السلة',
