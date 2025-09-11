@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - Responsive Styles
  * Location: /public_html/dev_staging/assets/css/responsive.css
- * Updated: Added responsive styles for header wrapper
+ * Updated: Fixed category cards display on mobile
  */
 
 /* ========================================
@@ -133,9 +133,17 @@
         gap: 20px;
     }
     
+    /* Categories Grid - ENSURE VISIBLE */
     .categories-grid {
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
+    }
+    
+    .category-card {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     .features-grid {
@@ -313,14 +321,47 @@
         padding: 8px;
     }
     
-    /* Categories */
+    /* Categories Grid - FORCE VISIBILITY ON MOBILE */
+    .categories-section {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
     .categories-grid {
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     .category-card {
+        display: block !important;
         height: 250px;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative;
+    }
+    
+    .category-card a {
+        display: block !important;
+        height: 100%;
+    }
+    
+    .category-image {
+        height: 100%;
+        width: 100%;
+        background-size: cover !important;
+        background-position: center !important;
+    }
+    
+    .category-overlay {
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        padding: 20px 15px;
+    }
+    
+    .category-overlay h3 {
+        font-size: 1.1rem;
     }
     
     /* Features */
@@ -553,16 +594,82 @@
         padding: 4px 10px;
     }
     
-    /* Categories */
+    /* Categories Grid - SINGLE COLUMN ON SMALL MOBILE */
+    .categories-section {
+        display: block !important;
+        padding: 40px 0;
+    }
+    
     .categories-grid {
-        grid-template-columns: 1fr;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
         gap: 20px;
+        padding: 0 10px;
     }
     
     .category-card {
+        display: block !important;
         height: 200px;
         max-width: 400px;
         margin: 0 auto;
+        width: 100%;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+    
+    .category-card a {
+        display: block !important;
+        height: 100%;
+        width: 100%;
+    }
+    
+    .category-image {
+        height: 100%;
+        width: 100%;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+    }
+    
+    .category-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.5) 50%, transparent);
+        padding: 20px 15px;
+        transform: translateY(0);
+    }
+    
+    .category-overlay h3 {
+        font-size: 1.1rem;
+        color: var(--gold-primary);
+        margin-bottom: 5px;
+    }
+    
+    .product-count {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    /* Product Filters on Mobile */
+    .product-filters {
+        gap: 6px;
+        padding: 0 10px;
+        margin-bottom: 25px;
+    }
+    
+    .filter-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+        flex: 0 1 calc(50% - 3px);
+    }
+    
+    .filter-btn i {
+        display: none; /* Hide icons to save space */
     }
     
     /* Features */
@@ -744,14 +851,50 @@
         font-size: 1.25rem;
     }
     
+    /* Single column for everything */
     .products-grid,
     .categories-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
+    }
+    
+    .category-card {
+        height: 180px;
     }
     
     .btn {
         padding: 8px 15px;
         font-size: 11px;
+    }
+    
+    .filter-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        flex: 1 1 100%;
+    }
+}
+
+/* ========================================
+   Category Cards Visibility Fix
+   ======================================== */
+@media screen and (max-width: 1023px) {
+    /* Force category cards to be visible on all screen sizes */
+    .categories-section,
+    .categories-grid,
+    .category-card,
+    .category-card * {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: block !important;
+    }
+    
+    .categories-grid {
+        display: grid !important;
+    }
+    
+    /* Ensure animations don't hide elements permanently */
+    .animate-on-scroll {
+        opacity: 1 !important;
+        transform: none !important;
     }
 }
 
@@ -770,7 +913,8 @@
     .cookie-notice,
     .cart-sidebar,
     .cart-overlay,
-    .mobile-menu {
+    .mobile-menu,
+    .product-filters {
         display: none !important;
     }
     
@@ -783,7 +927,6 @@
     .logo-img,
     .footer-logo img,
     .mobile-logo {
-        /* Keep original logo colors for print */
         filter: none !important;
     }
     
@@ -807,6 +950,20 @@
     .btn {
         border: 1px solid black;
     }
+    
+    /* Show all categories for print */
+    .categories-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .category-card {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
 }
 
 /* ========================================
@@ -814,7 +971,6 @@
    ======================================== */
 @media screen and (-webkit-min-device-pixel-ratio: 2),
        screen and (min-resolution: 192dpi) {
-    /* Optimize images for retina displays */
     .logo-img {
         image-rendering: -webkit-optimize-contrast;
     }
@@ -824,7 +980,6 @@
    Hover States (Desktop Only)
    ======================================== */
 @media (hover: hover) and (pointer: fine) {
-    /* Enable hover effects only on devices with precise pointers */
     .btn:hover {
         transform: translateY(-2px);
     }
@@ -839,5 +994,178 @@
     
     .social-links a:hover {
         transform: translateY(-5px);
+    }
+}
+
+/**
+ * ZIN Fashion - Mobile Animation Disable
+ * Location: Add to /public_html/dev_staging/assets/css/responsive.css
+ * Purpose: Disable all animations on mobile for performance
+ */
+
+/* ========================================
+   Disable ALL Animations on Mobile
+   ======================================== */
+@media screen and (max-width: 767px) {
+    /* Remove all animations */
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+    }
+    
+    /* Disable scroll animations */
+    .animate-on-scroll,
+    .animate-fade-up,
+    .animate-fade-up-delay,
+    .animate-fade-up-delay-2 {
+        opacity: 1 !important;
+        transform: none !important;
+        animation: none !important;
+        transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease !important;
+    }
+    
+    /* Disable shimmer effects */
+    .newsletter-section::before,
+    .top-banner::before {
+        display: none !important;
+        animation: none !important;
+    }
+    
+    /* Disable button animations */
+    .btn::before,
+    .filter-btn::before {
+        display: none !important;
+        animation: none !important;
+    }
+    
+    /* Disable loader */
+    .page-loader {
+        display: none !important;
+    }
+    
+    /* Disable parallax */
+    [data-parallax] {
+        transform: none !important;
+    }
+    
+    /* Disable hero animations */
+    .glass-box {
+        animation: none !important;
+    }
+    
+    .hero-slider .slide {
+        transition: opacity 0.5s ease !important; /* Keep simple fade for slides */
+    }
+    
+    /* Disable hover transforms but keep color changes */
+    .product-card:hover,
+    .category-card:hover,
+    .feature-card:hover {
+        transform: none !important;
+    }
+    
+    /* Keep image zoom on hover but simplified */
+    .product-card:hover .product-image img,
+    .category-card:hover .category-image {
+        transform: scale(1.05) !important; /* Reduced scale */
+        transition: transform 0.2s ease !important; /* Faster transition */
+    }
+    
+    /* Disable icon rotations */
+    .feature-card:hover .feature-icon {
+        transform: none !important;
+    }
+    
+    /* Simplify button hovers */
+    .btn:hover,
+    .filter-btn:hover {
+        transform: none !important;
+        transition: background-color 0.2s ease, color 0.2s ease !important;
+    }
+    
+    /* Disable text effects */
+    [data-typewriter],
+    [data-text-reveal],
+    .reveal-word {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+    
+    /* Disable ripple effects */
+    .btn-ripple {
+        display: none !important;
+    }
+    
+    /* Simplify transitions for better performance */
+    * {
+        transition-duration: 0.2s !important;
+        transition-delay: 0s !important;
+    }
+    
+    /* Keep only essential transitions */
+    .cart-sidebar,
+    .mobile-menu,
+    .modal,
+    .notification {
+        transition: transform 0.3s ease !important;
+    }
+    
+    /* Disable counter animations */
+    [data-counter] {
+        opacity: 1 !important;
+    }
+    
+    /* Show all content immediately */
+    .visible,
+    .animated-done {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* ========================================
+   Extra Small Devices Performance
+   ======================================== */
+@media screen and (max-width: 575px) {
+    /* Further simplify for very small devices */
+    * {
+        transition: none !important;
+    }
+    
+    /* Keep only critical transitions */
+    .cart-sidebar,
+    .mobile-menu {
+        transition: transform 0.25s ease !important;
+    }
+    
+    /* Disable all hover effects on very small devices */
+    .product-card:hover .product-image img,
+    .category-card:hover .category-image {
+        transform: none !important;
+    }
+}
+
+/* ========================================
+   Touch Device Specific
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+    /* Disable hover effects on touch devices */
+    *:hover {
+        transform: none !important;
+    }
+    
+    /* Disable animations */
+    * {
+        animation: none !important;
+    }
+    
+    /* Keep tap feedback */
+    button:active,
+    .btn:active,
+    a:active {
+        opacity: 0.8;
     }
 }
