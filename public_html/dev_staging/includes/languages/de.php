@@ -40,6 +40,12 @@ $lang = [
     'shop_by_category' => 'Nach Kategorie shoppen',
     'products' => 'Produkte',
     
+    // Product Filters
+    'filter_all' => 'Alle',
+    'filter_new' => 'Neu',
+    'filter_sale' => 'Sale',
+    'filter_bestseller' => 'Bestseller',
+    
     // Featured Products
     'featured_products' => 'Ausgewählte Produkte',
     'add_to_cart' => 'In den Warenkorb',
