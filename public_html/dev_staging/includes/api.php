@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// API Handler File - Updated for Header Integration
+// API Handler File - Fixed Cart Issue
 // Location: /public_html/dev_staging/includes/api.php
 // ===================================
 
@@ -449,7 +449,7 @@ function handleNewsletter($pdo) {
 }
 
 /**
- * Handle Cart Operations
+ * Handle Cart Operations - FIXED EMPTY CART ISSUE
  */
 function handleCart($pdo) {
     $method = $_SERVER['REQUEST_METHOD'];
@@ -497,6 +497,7 @@ function handleCart($pdo) {
                         'color' => $item['color_name'],
                         'base_price' => $item['base_price'],
                         'sale_price' => $item['sale_price'],
+                        'price' => $price,
                         'quantity' => $item['quantity'],
                         'subtotal' => $subtotal,
                         'image_url' => $item['image_url'] ?: '/assets/images/placeholder.jpg'
@@ -526,6 +527,7 @@ function handleCart($pdo) {
                             'product_name' => $product['product_name'],
                             'base_price' => $product['base_price'],
                             'sale_price' => $product['sale_price'],
+                            'price' => $price,
                             'quantity' => $quantity,
                             'subtotal' => $subtotal,
                             'image_url' => $product['image_url'] ?: '/assets/images/placeholder.jpg'
@@ -536,13 +538,23 @@ function handleCart($pdo) {
                 }
             }
             
-            $shipping = $total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+            // FIXED: Calculate shipping only if there are items
+            $shipping = 0;
+            if (count($items) > 0) {
+                $shipping = $total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+            }
+            
+            // FIXED: Calculate total correctly - don't add shipping if cart is empty
+            $finalTotal = $total;
+            if (count($items) > 0) {
+                $finalTotal = $total + $shipping;
+            }
             
             echo json_encode([
                 'items' => $items,
                 'subtotal' => $total,
                 'shipping' => $shipping,
-                'total' => $total + $shipping,
+                'total' => $finalTotal,
                 'free_shipping_threshold' => FREE_SHIPPING_THRESHOLD,
                 'free_shipping_remaining' => max(0, FREE_SHIPPING_THRESHOLD - $total)
             ]);
