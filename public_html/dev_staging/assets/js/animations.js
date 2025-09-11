@@ -1,7 +1,18 @@
 /**
  * ZIN Fashion - Animations
  * Location: /public_html/dev_staging/assets/js/animations.js
+ * Updated: Animations disabled for Arabic language and mobile devices
  */
+
+// ========================================
+// Check if animations should be disabled
+// ========================================
+function shouldDisableAnimations() {
+    const isMobile = window.innerWidth < 768;
+    const isArabic = document.documentElement.lang === 'ar' || document.documentElement.dir === 'rtl';
+    
+    return isMobile || isArabic;
+}
 
 // ========================================
 // Scroll Animations
@@ -9,18 +20,32 @@
 class ScrollAnimations {
     constructor() {
         this.elements = document.querySelectorAll('.animate-on-scroll');
+        this.disabled = shouldDisableAnimations();
         this.init();
     }
     
     init() {
+        // If animations are disabled, show all elements immediately
+        if (this.disabled) {
+            this.showAllElements();
+            return;
+        }
+        
+        // Otherwise use IntersectionObserver for animations
         if ('IntersectionObserver' in window) {
             this.createObserver();
         } else {
-            // Fallback for older browsers
-            this.elements.forEach(element => {
-                element.classList.add('visible');
-            });
+            this.showAllElements();
         }
+    }
+    
+    showAllElements() {
+        this.elements.forEach(element => {
+            element.classList.add('visible');
+            element.style.opacity = '1';
+            element.style.transform = 'none';
+            element.style.transition = 'none';
+        });
     }
     
     createObserver() {
@@ -33,13 +58,10 @@ class ScrollAnimations {
         const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    // Add visible class with staggered delay
                     const delay = entry.target.dataset.delay || 0;
                     setTimeout(() => {
                         entry.target.classList.add('visible');
                     }, delay);
-                    
-                    // Stop observing this element
                     observer.unobserve(entry.target);
                 }
             });
@@ -57,18 +79,21 @@ class ScrollAnimations {
 class ParallaxEffect {
     constructor() {
         this.parallaxElements = document.querySelectorAll('[data-parallax]');
+        this.disabled = shouldDisableAnimations();
         this.init();
     }
     
     init() {
-        if (this.parallaxElements.length > 0) {
-            window.addEventListener('scroll', () => {
-                this.updateParallax();
-            });
-            
-            // Initial update
-            this.updateParallax();
+        // Skip parallax on mobile and Arabic
+        if (this.disabled || this.parallaxElements.length === 0) {
+            return;
         }
+        
+        window.addEventListener('scroll', () => {
+            this.updateParallax();
+        });
+        
+        this.updateParallax();
     }
     
     updateParallax() {
@@ -88,30 +113,41 @@ class ParallaxEffect {
 class CounterAnimation {
     constructor() {
         this.counters = document.querySelectorAll('[data-counter]');
+        this.disabled = shouldDisableAnimations();
         this.init();
     }
     
     init() {
-        if (this.counters.length > 0) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        this.animateCounter(entry.target);
-                        observer.unobserve(entry.target);
-                    }
-                });
-            });
-            
+        if (this.counters.length === 0) return;
+        
+        // If disabled, show final values immediately
+        if (this.disabled) {
             this.counters.forEach(counter => {
-                observer.observe(counter);
+                const target = parseInt(counter.dataset.counter);
+                counter.textContent = target;
             });
+            return;
         }
+        
+        // Otherwise animate
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    this.animateCounter(entry.target);
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+        
+        this.counters.forEach(counter => {
+            observer.observe(counter);
+        });
     }
     
     animateCounter(element) {
         const target = parseInt(element.dataset.counter);
         const duration = parseInt(element.dataset.duration) || 2000;
-        const increment = target / (duration / 16); // 60fps
+        const increment = target / (duration / 16);
         let current = 0;
         
         const updateCounter = () => {
@@ -133,17 +169,16 @@ class CounterAnimation {
 // ========================================
 class HoverEffects {
     constructor() {
+        this.disabled = shouldDisableAnimations();
         this.init();
     }
     
     init() {
-        // Product card hover effect
+        // Skip hover effects on mobile and Arabic
+        if (this.disabled) return;
+        
         this.initProductCardEffects();
-        
-        // Button hover effects
         this.initButtonEffects();
-        
-        // Category card effects
         this.initCategoryEffects();
     }
     
@@ -212,7 +247,12 @@ class HoverEffects {
 // ========================================
 class LoadingAnimation {
     constructor() {
-        this.createLoader();
+        this.disabled = shouldDisableAnimations();
+        
+        // Skip loader on mobile and Arabic
+        if (!this.disabled) {
+            this.createLoader();
+        }
     }
     
     createLoader() {
@@ -231,7 +271,6 @@ class LoadingAnimation {
         
         document.body.insertAdjacentHTML('afterbegin', loaderHtml);
         
-        // Hide loader when page is fully loaded
         window.addEventListener('load', () => {
             setTimeout(() => {
                 this.hideLoader();
@@ -255,15 +294,33 @@ class LoadingAnimation {
 // ========================================
 class TextEffects {
     constructor() {
+        this.disabled = shouldDisableAnimations();
         this.init();
     }
     
     init() {
-        // Typewriter effect
-        this.initTypewriter();
+        // Skip text effects on mobile and Arabic
+        if (this.disabled) {
+            this.showAllText();
+            return;
+        }
         
-        // Text reveal effect
+        this.initTypewriter();
         this.initTextReveal();
+    }
+    
+    showAllText() {
+        // Show typewriter text immediately
+        const typewriterElements = document.querySelectorAll('[data-typewriter]');
+        typewriterElements.forEach(element => {
+            element.textContent = element.dataset.typewriter;
+        });
+        
+        // Show reveal text immediately
+        const revealElements = document.querySelectorAll('[data-text-reveal]');
+        revealElements.forEach(element => {
+            element.style.opacity = '1';
+        });
     }
     
     initTypewriter() {
@@ -284,7 +341,6 @@ class TextEffects {
                 }
             };
             
-            // Start typing when element is visible
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -332,22 +388,26 @@ class TextEffects {
 // Initialize All Animations
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize scroll animations
+    const animationsDisabled = shouldDisableAnimations();
+    
+    if (animationsDisabled) {
+        console.log('Animations disabled for mobile/Arabic');
+        
+        // Remove all animation classes and ensure visibility
+        document.querySelectorAll('.animate-on-scroll, .animate-fade-up, .animate-fade-up-delay, .animate-fade-up-delay-2').forEach(el => {
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+            el.style.transition = 'none';
+            el.classList.add('no-animation');
+        });
+    }
+    
+    // Initialize animations (they will check internally if disabled)
     new ScrollAnimations();
-    
-    // Initialize parallax effects
     new ParallaxEffect();
-    
-    // Initialize counter animations
     new CounterAnimation();
-    
-    // Initialize hover effects
     new HoverEffects();
-    
-    // Initialize loading animation
     new LoadingAnimation();
-    
-    // Initialize text effects
     new TextEffects();
 });
 
@@ -355,7 +415,47 @@ document.addEventListener('DOMContentLoaded', function() {
 // Animation Styles
 // ========================================
 const animationStyles = `
-    /* Loader Styles */
+    /* Base animation styles */
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .animate-on-scroll.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Disable animations for mobile and Arabic */
+    html[lang="ar"] .animate-on-scroll,
+    html[dir="rtl"] .animate-on-scroll,
+    .no-animation {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+    
+    @media screen and (max-width: 767px) {
+        .animate-on-scroll,
+        .animate-fade-up,
+        .animate-fade-up-delay,
+        .animate-fade-up-delay-2,
+        [data-parallax],
+        [data-typewriter],
+        [data-text-reveal] {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+            animation: none !important;
+        }
+        
+        .page-loader {
+            display: none !important;
+        }
+    }
+    
+    /* Loader Styles (Desktop only) */
     .page-loader {
         position: fixed;
         top: 0;
@@ -386,6 +486,7 @@ const animationStyles = `
     .loader-logo img {
         height: 60px;
         width: auto;
+        filter: none !important;
     }
     
     .spinner-ring {
@@ -407,29 +508,31 @@ const animationStyles = `
         50% { transform: scale(1.05); }
     }
     
-    /* Button Ripple Effect */
-    .btn {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .btn-ripple {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.3);
-        transform: scale(0);
-        animation: ripple 0.6s ease-out;
-        pointer-events: none;
-    }
-    
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
+    /* Button Ripple Effect (Desktop only) */
+    @media (hover: hover) and (pointer: fine) {
+        .btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: scale(0);
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
         }
     }
     
-    /* Text Reveal */
+    /* Text Reveal (Desktop only) */
     .reveal-word {
         display: inline-block;
         opacity: 0;
@@ -442,147 +545,44 @@ const animationStyles = `
         transform: translateY(0);
     }
     
-    /* Notification Styles */
-    .notification {
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-left: 4px solid;
-        padding: 15px 20px;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 300px;
-        transform: translateX(400px);
-        transition: transform 0.3s ease;
-        z-index: 9999;
-        box-shadow: var(--shadow-lg);
+    /* Disable text animations on mobile and Arabic */
+    html[lang="ar"] .reveal-word,
+    html[dir="rtl"] .reveal-word {
+        opacity: 1 !important;
+        transform: none !important;
     }
     
-    .notification.show {
-        transform: translateX(0);
-    }
-    
-    .notification-success {
-        border-left-color: #2ecc71;
-        color: #2ecc71;
-    }
-    
-    .notification-error {
-        border-left-color: #e74c3c;
-        color: #e74c3c;
-    }
-    
-    .notification-info {
-        border-left-color: var(--gold-primary);
-        color: var(--gold-primary);
-    }
-    
-    /* Modal Styles */
-    .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1004;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-    }
-    
-    .modal.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .modal-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.7);
-    }
-    
-    .modal-content {
-        position: relative;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        max-width: 90%;
-        max-height: 90vh;
-        overflow: auto;
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-    }
-    
-    .modal.active .modal-content {
-        transform: scale(1);
-    }
-    
-    .modal-close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: transparent;
-        border: none;
-        color: var(--text-primary);
-        font-size: 24px;
-        cursor: pointer;
-        z-index: 1;
-        transition: color 0.3s ease;
-    }
-    
-    .modal-close:hover {
-        color: var(--gold-primary);
-    }
-    
-    .quick-view-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        padding: 30px;
-    }
-    
-    .quick-view-images img {
-        width: 100%;
-        height: auto;
-        border-radius: 5px;
-    }
-    
-    .quick-view-info h2 {
-        color: var(--gold-primary);
-        margin-bottom: 15px;
-    }
-    
-    .quick-view-price {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
-        font-size: 24px;
-    }
-    
-    .quick-view-description {
-        color: var(--text-secondary);
-        margin-bottom: 30px;
-        line-height: 1.6;
-    }
-    
-    .quick-view-actions {
-        display: flex;
-        gap: 15px;
+    @media screen and (max-width: 767px) {
+        .reveal-word {
+            opacity: 1 !important;
+            transform: none !important;
+        }
     }
 `;
 
-// Add animation styles to page
-const animationStyleElement = document.createElement('style');
-animationStyleElement.textContent = animationStyles;
-document.head.appendChild(animationStyleElement);
+// Only add animation styles if not disabled
+if (!shouldDisableAnimations()) {
+    const animationStyleElement = document.createElement('style');
+    animationStyleElement.textContent = animationStyles;
+    document.head.appendChild(animationStyleElement);
+} else {
+    // Add minimal styles for disabled animations
+    const minimalStyles = `
+        .animate-on-scroll,
+        .animate-fade-up,
+        .animate-fade-up-delay,
+        .animate-fade-up-delay-2,
+        .reveal-word,
+        [data-parallax],
+        [data-typewriter],
+        [data-text-reveal] {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+            animation: none !important;
+        }
+    `;
+    const styleElement = document.createElement('style');
+    styleElement.textContent = minimalStyles;
+    document.head.appendChild(styleElement);
+}
