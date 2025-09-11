@@ -33,23 +33,31 @@ $menuCategories = $menuStmt->fetchAll();
                 <div class="banner-right">
                     <!-- Language Selector -->
                     <div class="language-selector">
-                        <button class="lang-current" id="langToggle">
-                            <span class="flag flag-<?= $currentLang ?>"></span>
-                            <span><?= strtoupper($currentLang) ?></span>
+                        <div class="lang-current" id="langToggle">
+                            <?php if ($currentLang === 'de'): ?>
+                            <span class="flag flag-de"></span>
+                            <span>DE</span>
+                            <?php elseif ($currentLang === 'en'): ?>
+                            <span class="flag flag-en"></span>
+                            <span>EN</span>
+                            <?php elseif ($currentLang === 'ar'): ?>
+                            <span class="flag flag-ar"></span>
+                            <span>AR</span>
+                            <?php endif; ?>
                             <i class="fas fa-chevron-down"></i>
-                        </button>
+                        </div>
                         <div class="lang-dropdown" id="langDropdown">
                             <a href="?lang=de" class="lang-option <?= $currentLang === 'de' ? 'active' : '' ?>">
-                                <span class="flag flag-de"></span>
-                                <span>Deutsch</span>
+                            <span class="flag flag-de"></span>
+                            <span>Deutsch</span>
                             </a>
                             <a href="?lang=en" class="lang-option <?= $currentLang === 'en' ? 'active' : '' ?>">
-                                <span class="flag flag-en"></span>
-                                <span>English</span>
+                            <span class="flag flag-en"></span>
+                            <span>English</span>
                             </a>
                             <a href="?lang=ar" class="lang-option <?= $currentLang === 'ar' ? 'active' : '' ?>">
-                                <span class="flag flag-ar"></span>
-                                <span>العربية</span>
+                            <span class="flag flag-ar"></span>
+                            <span>العربية</span>
                             </a>
                         </div>
                     </div>
