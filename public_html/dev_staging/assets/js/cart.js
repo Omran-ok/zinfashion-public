@@ -1,6 +1,7 @@
 /**
- * ZIN Fashion - Cart Operations
+ * ZIN Fashion - Cart Operations (FIXED)
  * Location: /public_html/dev_staging/assets/js/cart.js
+ * Fixed: Empty cart showing €4.99 and centered empty cart message
  */
 
 class ShoppingCart {
@@ -329,8 +330,9 @@ class ShoppingCart {
             
             cartContent.innerHTML = html;
         } else {
+            // FIXED: Centered empty cart display
             cartContent.innerHTML = `
-                <div class="cart-empty">
+                <div class="cart-empty-centered">
                     <i class="fas fa-shopping-bag"></i>
                     <p>Your cart is empty</p>
                     <a href="/shop" class="btn btn-primary btn-small">Start Shopping</a>
@@ -338,7 +340,7 @@ class ShoppingCart {
             `;
         }
         
-        // Update total
+        // Update total - FIXED: Show 0 when cart is empty
         if (cartTotalAmount) {
             const total = this.calculateTotal();
             cartTotalAmount.textContent = '€' + this.formatPrice(total);
@@ -453,6 +455,10 @@ class ShoppingCart {
     }
     
     calculateShipping(subtotal) {
+        // FIXED: Return 0 shipping if cart is empty
+        if (this.cartItems.length === 0) {
+            return 0;
+        }
         return subtotal >= this.freeShippingThreshold ? 0 : this.shippingCost;
     }
     
@@ -461,6 +467,11 @@ class ShoppingCart {
     }
     
     calculateTotal() {
+        // FIXED: Return 0 if cart is empty
+        if (this.cartItems.length === 0) {
+            return 0;
+        }
+        
         const subtotal = this.calculateSubtotal();
         const shipping = this.calculateShipping(subtotal);
         const tax = this.calculateTax(subtotal);
@@ -589,6 +600,50 @@ const cartStyles = `
         border-top-color: var(--gold-primary);
         border-radius: 50%;
         animation: spin 1s linear infinite;
+    }
+    
+    /* FIXED: More specific selectors for empty cart centering */
+    #cartSidebar .cart-empty-centered,
+    .cart-sidebar .cart-empty-centered {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 300px !important;
+        text-align: center !important;
+        padding: 40px 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    #cartSidebar .cart-empty-centered i,
+    .cart-sidebar .cart-empty-centered i {
+        font-size: 64px !important;
+        color: var(--text-muted) !important;
+        margin-bottom: 20px !important;
+        opacity: 0.3 !important;
+        display: block !important;
+    }
+    
+    #cartSidebar .cart-empty-centered p,
+    .cart-sidebar .cart-empty-centered p {
+        color: var(--text-secondary) !important;
+        font-size: 16px !important;
+        margin-bottom: 25px !important;
+        display: block !important;
+    }
+    
+    #cartSidebar .cart-empty-centered .btn,
+    .cart-sidebar .cart-empty-centered .btn {
+        padding: 12px 30px !important;
+        display: inline-block !important;
+    }
+    
+    /* Ensure cart sidebar content takes full height for centering */
+    #cartContent {
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
     }
     
     @keyframes bounce {
