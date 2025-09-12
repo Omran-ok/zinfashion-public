@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - Main JavaScript
  * Location: /public_html/dev_staging/assets/js/main.js
- * Updated: Added header scroll behavior and fixed language dropdown
+ * Updated: Removed conflicting cart display functions
  */
 
 // ========================================
@@ -10,7 +10,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     initializeTheme();
     initializeLanguageSelector();
-    initializeHeaderScroll(); // New function
+    initializeHeaderScroll();
     initializeMobileMenu();
     initializeSearch();
     initializeNewsletterForm();
@@ -18,22 +18,25 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCookieNotice();
     initializeCartSidebar();
     ensureLogoColors();
+    
+    // Initialize shopping cart from cart.js
+    if (typeof ShoppingCart !== 'undefined' && !window.cart) {
+        window.cart = new ShoppingCart();
+    }
 });
 
 // ========================================
-// Header Scroll Behavior - NEW
+// Header Scroll Behavior
 // ========================================
 function initializeHeaderScroll() {
     const headerWrapper = document.getElementById('headerWrapper');
     let lastScrollY = window.scrollY;
-    let scrollThreshold = 50; // Pixels before adding scrolled class
+    let scrollThreshold = 50;
     
     if (!headerWrapper) return;
     
-    // Check scroll position on load
     handleHeaderScroll();
     
-    // Handle scroll event with throttling
     let scrollTimer;
     window.addEventListener('scroll', function() {
         if (scrollTimer) {
@@ -48,44 +51,28 @@ function initializeHeaderScroll() {
     function handleHeaderScroll() {
         const currentScrollY = window.scrollY;
         
-        // Add/remove scrolled class based on scroll position
         if (currentScrollY > scrollThreshold) {
             headerWrapper.classList.add('scrolled');
         } else {
             headerWrapper.classList.remove('scrolled');
         }
         
-        // Optional: Hide header on scroll down, show on scroll up
-        // Uncomment if you want this behavior
-        /*
-        if (currentScrollY > lastScrollY && currentScrollY > 200) {
-            // Scrolling down & past 200px
-            headerWrapper.style.transform = 'translateY(-100%)';
-        } else {
-            // Scrolling up or at top
-            headerWrapper.style.transform = 'translateY(0)';
-        }
-        */
-        
         lastScrollY = currentScrollY;
     }
 }
 
 // ========================================
-// Ensure Logo Colors (Fix for any CSS conflicts)
+// Ensure Logo Colors
 // ========================================
 function ensureLogoColors() {
-    // Get all logo images
     const logos = document.querySelectorAll('.logo-img, .footer-logo img, .mobile-logo, img[alt="ZIN Fashion"]');
     
-    // Remove any filters applied to logos
     logos.forEach(logo => {
         logo.style.filter = 'none';
         logo.style.webkitFilter = 'none';
         logo.style.opacity = '1';
     });
     
-    // Also ensure no filter is applied when theme changes
     const observer = new MutationObserver(function(mutations) {
         logos.forEach(logo => {
             if (logo.style.filter !== 'none') {
@@ -95,7 +82,6 @@ function ensureLogoColors() {
         });
     });
     
-    // Observe body for class changes (theme switches)
     observer.observe(document.body, {
         attributes: true,
         attributeFilter: ['class']
@@ -109,7 +95,6 @@ function initializeTheme() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
     
-    // Check for saved theme preference
     const savedTheme = localStorage.getItem('theme') || 'dark';
     body.className = `theme-${savedTheme}`;
     
@@ -121,14 +106,13 @@ function initializeTheme() {
             body.className = `theme-${newTheme}`;
             localStorage.setItem('theme', newTheme);
             
-            // Smooth transition
             body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
         });
     }
 }
 
 // ========================================
-// Language Selector - UPDATED with z-index fix
+// Language Selector
 // ========================================
 function initializeLanguageSelector() {
     const langToggle = document.getElementById('langToggle');
@@ -143,7 +127,6 @@ function initializeLanguageSelector() {
         const isActive = langDropdown.classList.contains('active');
         
         if (!isActive) {
-            // Force show dropdown with inline styles
             langDropdown.classList.add('active');
             langDropdown.style.cssText = `
                 display: block !important;
@@ -158,13 +141,11 @@ function initializeLanguageSelector() {
                 transform: translateY(0) !important;
             `;
         } else {
-            // Hide dropdown
             langDropdown.classList.remove('active');
             langDropdown.style.cssText = '';
         }
     });
     
-    // Close when clicking outside
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.language-selector')) {
             langDropdown.classList.remove('active');
@@ -181,7 +162,6 @@ function initializeMobileMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
     
-    // Create overlay if it doesn't exist
     let overlay = document.querySelector('.mobile-menu-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -209,7 +189,6 @@ function initializeMobileMenu() {
             mobileMenuToggle.classList.remove('active');
         }
         
-        // Mobile submenu toggles
         const mobileNavToggles = document.querySelectorAll('.mobile-nav-toggle');
         mobileNavToggles.forEach(toggle => {
             toggle.addEventListener('click', function(e) {
@@ -245,7 +224,6 @@ function initializeSearch() {
             }
         });
         
-        // Close suggestions when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.header-search')) {
                 searchSuggestions.style.display = 'none';
@@ -345,7 +323,6 @@ function initializeNewsletterForm() {
 function initializeBackToTop() {
     let backToTop = document.getElementById('backToTop');
     
-    // Create button if it doesn't exist
     if (!backToTop) {
         backToTop = document.createElement('button');
         backToTop.id = 'backToTop';
@@ -355,7 +332,6 @@ function initializeBackToTop() {
         document.body.appendChild(backToTop);
     }
     
-    // Show/hide button based on scroll position
     window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
             backToTop.classList.add('visible');
@@ -364,7 +340,6 @@ function initializeBackToTop() {
         }
     });
     
-    // Scroll to top when clicked
     backToTop.addEventListener('click', function() {
         window.scrollTo({
             top: 0,
@@ -379,7 +354,6 @@ function initializeBackToTop() {
 function initializeCookieNotice() {
     let cookieNotice = document.getElementById('cookieNotice');
     
-    // Create cookie notice if it doesn't exist
     if (!cookieNotice) {
         cookieNotice = document.createElement('div');
         cookieNotice.id = 'cookieNotice';
@@ -399,7 +373,6 @@ function initializeCookieNotice() {
     const cookieAccept = document.getElementById('cookieAccept');
     const cookieDecline = document.getElementById('cookieDecline');
     
-    // Check if user has already made a choice
     const cookieChoice = localStorage.getItem('cookieConsent');
     
     if (!cookieChoice) {
@@ -412,7 +385,6 @@ function initializeCookieNotice() {
         cookieAccept.addEventListener('click', function() {
             localStorage.setItem('cookieConsent', 'accepted');
             cookieNotice.classList.remove('show');
-            // Initialize analytics and tracking
             initializeAnalytics();
         });
     }
@@ -426,12 +398,11 @@ function initializeCookieNotice() {
 }
 
 function initializeAnalytics() {
-    // Initialize Google Analytics, Facebook Pixel, etc.
     console.log('Analytics initialized');
 }
 
 // ========================================
-// Cart Sidebar
+// Cart Sidebar (Just handles open/close)
 // ========================================
 function initializeCartSidebar() {
     const cartTrigger = document.getElementById('cartTrigger');
@@ -442,199 +413,26 @@ function initializeCartSidebar() {
     if (cartTrigger && cartSidebar) {
         cartTrigger.addEventListener('click', function(e) {
             e.preventDefault();
-            openCartSidebar();
+            if (window.cart) {
+                window.cart.openCartSidebar();
+            }
         });
         
         if (cartClose) {
-            cartClose.addEventListener('click', closeCartSidebar);
+            cartClose.addEventListener('click', function() {
+                if (window.cart) {
+                    window.cart.closeCartSidebar();
+                }
+            });
         }
         
         if (cartOverlay) {
-            cartOverlay.addEventListener('click', closeCartSidebar);
+            cartOverlay.addEventListener('click', function() {
+                if (window.cart) {
+                    window.cart.closeCartSidebar();
+                }
+            });
         }
-    }
-    
-    // Load cart content on page load
-    loadCartContent();
-}
-
-function openCartSidebar() {
-    const cartSidebar = document.getElementById('cartSidebar');
-    const cartOverlay = document.getElementById('cartOverlay');
-    
-    cartSidebar.classList.add('active');
-    cartOverlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    
-    // Load latest cart content
-    loadCartContent();
-}
-
-function closeCartSidebar() {
-    const cartSidebar = document.getElementById('cartSidebar');
-    const cartOverlay = document.getElementById('cartOverlay');
-    
-    cartSidebar.classList.remove('active');
-    cartOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-async function loadCartContent() {
-    try {
-        const response = await fetch('/api.php?action=cart');
-        const data = await response.json();
-        
-        updateCartDisplay(data);
-    } catch (error) {
-        console.error('Error loading cart:', error);
-    }
-}
-
-function updateCartDisplay(cartData) {
-    const cartContent = document.getElementById('cartContent');
-    const cartCount = document.getElementById('cartCount');
-    const cartTotalAmount = document.getElementById('cartTotalAmount');
-    
-    if (cartData.items && cartData.items.length > 0) {
-        let html = '<div class="cart-items">';
-        
-        cartData.items.forEach(item => {
-            html += `
-                <div class="cart-item" data-item-id="${item.cart_item_id}">
-                    <div class="cart-item-image">
-                        <img src="${item.image_url}" alt="${item.product_name}">
-                    </div>
-                    <div class="cart-item-details">
-                        <div class="cart-item-name">${item.product_name}</div>
-                        <div class="cart-item-meta">
-                            ${item.size ? `Size: ${item.size}` : ''}
-                            ${item.color ? ` | Color: ${item.color}` : ''}
-                        </div>
-                        <div class="cart-item-price">
-                            <span class="quantity">${item.quantity} x</span>
-                            <span class="price">€${formatPrice(item.price || item.base_price)}</span>
-                        </div>
-                    </div>
-                    <button class="cart-item-remove" onclick="removeFromCart(${item.cart_item_id})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        
-        if (cartData.free_shipping_remaining > 0) {
-            html += `
-                <div class="free-shipping-notice">
-                    <i class="fas fa-truck"></i>
-                    Add €${formatPrice(cartData.free_shipping_remaining)} more for free shipping!
-                </div>
-            `;
-        }
-        
-        cartContent.innerHTML = html;
-    } else {
-        cartContent.innerHTML = `
-            <div class="cart-empty">
-                <i class="fas fa-shopping-bag"></i>
-                <p>Your cart is empty</p>
-                <a href="/shop" class="btn btn-primary btn-small">Start Shopping</a>
-            </div>
-        `;
-    }
-    
-    // Update cart count
-    if (cartCount) {
-        const itemCount = cartData.items ? cartData.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-        if (itemCount > 0) {
-            cartCount.textContent = itemCount;
-            cartCount.style.display = 'flex';
-        } else {
-            cartCount.style.display = 'none';
-        }
-    }
-    
-    // Update total amount
-    if (cartTotalAmount) {
-        cartTotalAmount.textContent = '€' + formatPrice(cartData.total || 0);
-    }
-}
-
-// ========================================
-// Cart Operations
-// ========================================
-async function addToCart(productId, variantId = null, quantity = 1) {
-    try {
-        const response = await fetch('/api.php?action=cart', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                variant_id: variantId,
-                quantity: quantity
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Show success message
-            showNotification('Product added to cart!', 'success');
-            
-            // Update cart display
-            loadCartContent();
-            
-            // Open cart sidebar
-            openCartSidebar();
-        } else {
-            showNotification(data.message || 'Failed to add to cart', 'error');
-        }
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        showNotification('An error occurred', 'error');
-    }
-}
-
-async function removeFromCart(itemId) {
-    try {
-        const response = await fetch(`/api.php?action=cart&item_id=${itemId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            loadCartContent();
-            showNotification('Item removed from cart', 'info');
-        }
-    } catch (error) {
-        console.error('Error removing from cart:', error);
-    }
-}
-
-async function updateCartQuantity(itemId, quantity) {
-    try {
-        const response = await fetch('/api.php?action=cart', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                item_id: itemId,
-                quantity: quantity
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            loadCartContent();
-        }
-    } catch (error) {
-        console.error('Error updating quantity:', error);
     }
 }
 
@@ -659,7 +457,6 @@ async function addToWishlist(productId) {
             showNotification('Added to wishlist!', 'success');
             updateWishlistCount();
             
-            // Update heart icon
             const wishlistBtn = document.querySelector(`.add-to-wishlist[data-product-id="${productId}"]`);
             if (wishlistBtn) {
                 wishlistBtn.classList.add('active');
@@ -686,7 +483,6 @@ async function removeFromWishlist(productId) {
             showNotification('Removed from wishlist', 'info');
             updateWishlistCount();
             
-            // Update heart icon
             const wishlistBtn = document.querySelector(`.add-to-wishlist[data-product-id="${productId}"]`);
             if (wishlistBtn) {
                 wishlistBtn.classList.remove('active');
@@ -727,7 +523,9 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         const button = e.target.closest('.btn-add-to-cart');
         const productId = button.dataset.productId;
-        addToCart(productId);
+        if (window.cart) {
+            window.cart.addItem(productId);
+        }
     }
     
     // Add to wishlist button
@@ -769,7 +567,6 @@ async function openQuickView(productId) {
 }
 
 function showQuickViewModal(product) {
-    // Create modal HTML
     const modalHtml = `
         <div class="modal" id="quickViewModal">
             <div class="modal-overlay" onclick="closeQuickView()"></div>
@@ -795,7 +592,7 @@ function showQuickViewModal(product) {
                             ${product.description || ''}
                         </div>
                         <div class="quick-view-actions">
-                            <button class="btn btn-primary" onclick="addToCart(${product.product_id})">
+                            <button class="btn btn-primary" onclick="if(window.cart) window.cart.addItem(${product.product_id})">
                                 <i class="fas fa-shopping-cart"></i> Add to Cart
                             </button>
                             <a href="/product/${product.product_slug}" class="btn btn-outline">
@@ -808,10 +605,8 @@ function showQuickViewModal(product) {
         </div>
     `;
     
-    // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    // Show modal with animation
     setTimeout(() => {
         document.getElementById('quickViewModal').classList.add('active');
     }, 10);
@@ -835,7 +630,6 @@ function formatPrice(price) {
 }
 
 function showNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -843,7 +637,6 @@ function showNotification(message, type = 'info') {
         <span>${message}</span>
     `;
     
-    // Style for notification
     notification.style.cssText = `
         position: fixed;
         top: 100px;
@@ -861,15 +654,12 @@ function showNotification(message, type = 'info') {
         transition: transform 0.3s ease;
     `;
     
-    // Add to page
     document.body.appendChild(notification);
     
-    // Show with animation
     setTimeout(() => {
         notification.style.transform = 'translateX(0)';
     }, 10);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         notification.style.transform = 'translateX(400px)';
         setTimeout(() => {
@@ -881,10 +671,9 @@ function showNotification(message, type = 'info') {
 // ========================================
 // Make functions globally available
 // ========================================
-window.addToCart = addToCart;
-window.removeFromCart = removeFromCart;
-window.updateCartQuantity = updateCartQuantity;
 window.addToWishlist = addToWishlist;
 window.removeFromWishlist = removeFromWishlist;
 window.closeQuickView = closeQuickView;
 window.openQuickView = openQuickView;
+window.formatPrice = formatPrice;
+window.showNotification = showNotification;
