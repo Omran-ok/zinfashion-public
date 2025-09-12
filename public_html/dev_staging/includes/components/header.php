@@ -217,6 +217,57 @@ $menuCategories = $menuStmt->fetchAll();
             </ul>
         </div>
     </nav>
+    
+    <!-- Add this in your header.php or main template file after language includes -->
+    <script>
+    window.cartTranslations = {
+        // Cart messages
+        'item_added_cart': '<?= addslashes($lang['item_added_cart'] ?? 'Item added to cart') ?>',
+        'item_removed_cart': '<?= addslashes($lang['item_removed_cart'] ?? 'Item removed from cart') ?>',
+        'cart_updated': '<?= addslashes($lang['cart_updated'] ?? 'Cart updated') ?>',
+        'cart_empty': '<?= addslashes($lang['cart_empty'] ?? 'Your cart is empty') ?>',
+        'cart_empty_message': '<?= addslashes($lang['cart_empty_message'] ?? 'Looks like you haven\'t added anything to your cart yet.') ?>',
+    
+        // Actions
+        'start_shopping': '<?= addslashes($lang['start_shopping'] ?? 'Start Shopping') ?>',
+        'continue_shopping': '<?= addslashes($lang['continue_shopping'] ?? 'Continue Shopping') ?>',
+        'proceed_to_checkout': '<?= addslashes($lang['proceed_to_checkout'] ?? 'Proceed to Checkout') ?>',
+    
+        // Labels
+        'product': '<?= addslashes($lang['product'] ?? 'Product') ?>',
+        'price': '<?= addslashes($lang['price'] ?? 'Price') ?>',
+        'quantity': '<?= addslashes($lang['quantity'] ?? 'Quantity') ?>',
+        'total': '<?= addslashes($lang['total'] ?? 'Total') ?>',
+        'subtotal': '<?= addslashes($lang['subtotal'] ?? 'Subtotal') ?>',
+        'shipping': '<?= addslashes($lang['shipping'] ?? 'Shipping') ?>',
+        'tax': '<?= addslashes($lang['tax'] ?? 'Tax') ?>',
+        'size': '<?= addslashes($lang['size'] ?? 'Size') ?>',
+        'color': '<?= addslashes($lang['color'] ?? 'Color') ?>',
+        'remove': '<?= addslashes($lang['remove'] ?? 'Remove') ?>',
+        'free': '<?= addslashes($lang['free'] ?? 'FREE') ?>',
+        'order_summary': '<?= addslashes($lang['order_summary'] ?? 'Order Summary') ?>',
+    
+        // Shipping messages
+        'add_for_free_shipping': '<?= addslashes($lang['add_for_free_shipping'] ?? 'Add €{amount} more for free shipping!') ?>',
+        'qualified_free_shipping': '<?= addslashes($lang['qualified_free_shipping'] ?? 'You qualify for free shipping!') ?>',
+    
+        // Confirmations
+        'confirm_remove_item': '<?= addslashes($lang['confirm_remove_item'] ?? 'Remove this item from cart?') ?>',
+    
+        // Errors
+        'error_adding_cart': '<?= addslashes($lang['error_adding_cart'] ?? 'Failed to add to cart') ?>',
+        'error_updating_cart': '<?= addslashes($lang['error_updating_cart'] ?? 'Failed to update cart') ?>',
+        'error_occurred': '<?= addslashes($lang['error_occurred'] ?? 'An error occurred') ?>',
+    
+        // Coupon
+        'enter_coupon_code': '<?= addslashes($lang['enter_coupon_code'] ?? 'Please enter a coupon code') ?>',
+        'coupon_applied': '<?= addslashes($lang['coupon_applied'] ?? 'Coupon applied! You saved €{amount}') ?>',
+        'invalid_coupon': '<?= addslashes($lang['invalid_coupon'] ?? 'Invalid coupon code') ?>',
+    
+        // Loading
+        'loading': '<?= addslashes($lang['loading'] ?? 'Loading...') ?>'
+    };
+    </script>
 </div>
 <!-- End of Header Wrapper -->
 
