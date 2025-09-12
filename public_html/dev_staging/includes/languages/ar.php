@@ -93,6 +93,20 @@ $lang = [
     'total' => 'المجموع',
     'view_cart' => 'عرض السلة',
     'checkout' => 'إتمام الشراء',
+    // Cart specific translations
+    'cart_updated' => 'تم تحديث السلة',
+    'cart_empty_message' => 'يبدو أنك لم تضف أي شيء إلى سلة التسوق بعد.',
+    'start_shopping' => 'ابدأ التسوق',
+    'free' => 'مجاني',
+    'add_for_free_shipping' => 'أضف €{amount} للحصول على شحن مجاني!',
+    'qualified_free_shipping' => 'أنت مؤهل للشحن المجاني!',
+    'confirm_remove_item' => 'إزالة هذا المنتج من السلة؟',
+    'error_adding_cart' => 'فشل في الإضافة إلى السلة',
+    'error_updating_cart' => 'فشل في تحديث السلة',
+    'error_occurred' => 'حدث خطأ',
+    'enter_coupon_code' => 'الرجاء إدخال رمز القسيمة',
+    'coupon_applied' => 'تم تطبيق القسيمة! لقد وفرت €{amount}',
+    'invalid_coupon' => 'رمز قسيمة غير صالح',
     
     // Cookie Notice
     'cookie_notice' => 'نستخدم ملفات تعريف الارتباط لتحسين تجربة التسوق الخاصة بك. بالمتابعة، فإنك توافق على استخدامنا لملفات تعريف الارتباط.',
