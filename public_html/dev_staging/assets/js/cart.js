@@ -1,7 +1,7 @@
 /**
- * ZIN Fashion - Cart Operations (FIXED)
+ * ZIN Fashion - Cart Operations (FULLY TRANSLATABLE)
  * Location: /public_html/dev_staging/assets/js/cart.js
- * Fixed: Empty cart showing €4.99 and centered empty cart message
+ * Updated: Full translation support for all cart content
  */
 
 class ShoppingCart {
@@ -12,6 +12,9 @@ class ShoppingCart {
         this.freeShippingThreshold = 50;
         this.shippingCost = 4.99;
         this.taxRate = 0.19; // 19% German VAT
+        
+        // Get translations from global translations object (set by PHP)
+        this.translations = window.cartTranslations || {};
         
         this.init();
     }
@@ -25,6 +28,11 @@ class ShoppingCart {
         
         // Update cart display
         this.updateCartDisplay();
+    }
+    
+    // Helper function to get translated text
+    t(key, fallback) {
+        return this.translations[key] || fallback || key;
     }
     
     initEventListeners() {
@@ -110,7 +118,7 @@ class ShoppingCart {
                 await this.loadCart();
                 
                 // Show success message
-                this.showNotification('Product added to cart!', 'success');
+                this.showNotification(this.t('item_added_cart', 'Product added to cart!'), 'success');
                 
                 // Open cart sidebar/modal
                 this.openCartSidebar();
@@ -118,11 +126,11 @@ class ShoppingCart {
                 // Update mini cart icon animation
                 this.animateCartIcon();
             } else {
-                this.showNotification(data.message || 'Failed to add to cart', 'error');
+                this.showNotification(data.message || this.t('error_adding_cart', 'Failed to add to cart'), 'error');
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
-            this.showNotification('An error occurred', 'error');
+            this.showNotification(this.t('error_occurred', 'An error occurred'), 'error');
         } finally {
             this.hideLoading();
         }
@@ -151,20 +159,20 @@ class ShoppingCart {
             
             if (data.success) {
                 await this.loadCart();
-                this.showNotification('Cart updated', 'success');
+                this.showNotification(this.t('cart_updated', 'Cart updated'), 'success');
             } else {
-                this.showNotification(data.message || 'Failed to update cart', 'error');
+                this.showNotification(data.message || this.t('error_updating_cart', 'Failed to update cart'), 'error');
             }
         } catch (error) {
             console.error('Error updating quantity:', error);
-            this.showNotification('An error occurred', 'error');
+            this.showNotification(this.t('error_occurred', 'An error occurred'), 'error');
         } finally {
             this.hideLoading();
         }
     }
     
     async removeItem(itemId) {
-        if (!confirm('Remove this item from cart?')) {
+        if (!confirm(this.t('confirm_remove_item', 'Remove this item from cart?'))) {
             return;
         }
         
@@ -179,7 +187,7 @@ class ShoppingCart {
             
             if (data.success) {
                 await this.loadCart();
-                this.showNotification('Item removed from cart', 'info');
+                this.showNotification(this.t('item_removed_cart', 'Item removed from cart'), 'info');
                 
                 // Animate removal
                 const itemElement = document.querySelector(`[data-cart-item-id="${itemId}"]`);
@@ -192,7 +200,7 @@ class ShoppingCart {
             }
         } catch (error) {
             console.error('Error removing item:', error);
-            this.showNotification('An error occurred', 'error');
+            this.showNotification(this.t('error_occurred', 'An error occurred'), 'error');
         } finally {
             this.hideLoading();
         }
@@ -200,7 +208,7 @@ class ShoppingCart {
     
     async applyCoupon(code) {
         if (!code) {
-            this.showNotification('Please enter a coupon code', 'warning');
+            this.showNotification(this.t('enter_coupon_code', 'Please enter a coupon code'), 'warning');
             return;
         }
         
@@ -221,13 +229,14 @@ class ShoppingCart {
             
             if (data.success) {
                 await this.loadCart();
-                this.showNotification(`Coupon applied! You saved €${data.discount}`, 'success');
+                const message = this.t('coupon_applied', 'Coupon applied! You saved €{amount}').replace('{amount}', data.discount);
+                this.showNotification(message, 'success');
             } else {
-                this.showNotification(data.message || 'Invalid coupon code', 'error');
+                this.showNotification(data.message || this.t('invalid_coupon', 'Invalid coupon code'), 'error');
             }
         } catch (error) {
             console.error('Error applying coupon:', error);
-            this.showNotification('An error occurred', 'error');
+            this.showNotification(this.t('error_occurred', 'An error occurred'), 'error');
         } finally {
             this.hideLoading();
         }
@@ -269,6 +278,9 @@ class ShoppingCart {
         
         if (!cartContent) return;
         
+        // Override any existing content
+        cartContent.innerHTML = '';
+        
         if (this.cartItems.length > 0) {
             let html = '<div class="cart-items">';
             
@@ -283,8 +295,8 @@ class ShoppingCart {
                         <div class="cart-item-details">
                             <div class="cart-item-name">${item.product_name}</div>
                             <div class="cart-item-meta">
-                                ${item.size ? `Size: ${item.size}` : ''}
-                                ${item.color ? ` | Color: ${item.color}` : ''}
+                                ${item.size ? `${this.t('size', 'Size')}: ${item.size}` : ''}
+                                ${item.color ? ` | ${this.t('color', 'Color')}: ${item.color}` : ''}
                             </div>
                             <div class="cart-item-price">
                                 <div class="quantity-controls">
@@ -297,7 +309,8 @@ class ShoppingCart {
                                 <span class="price">€${this.formatPrice(itemTotal)}</span>
                             </div>
                         </div>
-                        <button class="cart-item-remove" onclick="cart.removeItem(${item.cart_item_id})">
+                        <button class="cart-item-remove" onclick="cart.removeItem(${item.cart_item_id})" 
+                                title="${this.t('remove', 'Remove')}">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -313,7 +326,7 @@ class ShoppingCart {
                 html += `
                     <div class="free-shipping-notice">
                         <i class="fas fa-truck"></i>
-                        Add €${this.formatPrice(remaining)} more for free shipping!
+                        ${this.t('add_for_free_shipping', 'Add €{amount} more for free shipping!').replace('{amount}', this.formatPrice(remaining))}
                         <div class="shipping-progress">
                             <div class="shipping-progress-bar" style="width: ${(subtotal / this.freeShippingThreshold) * 100}%"></div>
                         </div>
@@ -323,21 +336,27 @@ class ShoppingCart {
                 html += `
                     <div class="free-shipping-notice success">
                         <i class="fas fa-check-circle"></i>
-                        You qualify for free shipping!
+                        ${this.t('qualified_free_shipping', 'You qualify for free shipping!')}
                     </div>
                 `;
             }
             
             cartContent.innerHTML = html;
         } else {
-            // FIXED: Centered empty cart display
-            cartContent.innerHTML = `
+            // FIXED: Create a wrapper div for proper centering
+            const emptyCartWrapper = document.createElement('div');
+            emptyCartWrapper.className = 'cart-empty-wrapper';
+            emptyCartWrapper.innerHTML = `
                 <div class="cart-empty-centered">
                     <i class="fas fa-shopping-bag"></i>
-                    <p>Your cart is empty</p>
-                    <a href="/shop" class="btn btn-primary btn-small">Start Shopping</a>
+                    <p>${this.t('cart_empty', 'Your cart is empty')}</p>
+                    <a href="/shop" class="btn btn-primary btn-small">${this.t('start_shopping', 'Start Shopping')}</a>
                 </div>
             `;
+            
+            // Clear and append
+            cartContent.innerHTML = '';
+            cartContent.appendChild(emptyCartWrapper);
         }
         
         // Update total - FIXED: Show 0 when cart is empty
@@ -359,10 +378,10 @@ class ShoppingCart {
                 <table class="cart-table">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
+                            <th>${this.t('product', 'Product')}</th>
+                            <th>${this.t('price', 'Price')}</th>
+                            <th>${this.t('quantity', 'Quantity')}</th>
+                            <th>${this.t('total', 'Total')}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -378,7 +397,7 @@ class ShoppingCart {
                                  alt="${item.product_name}">
                             <div>
                                 <h4>${item.product_name}</h4>
-                                <p>${item.size ? `Size: ${item.size}` : ''} ${item.color ? `| Color: ${item.color}` : ''}</p>
+                                <p>${item.size ? `${this.t('size', 'Size')}: ${item.size}` : ''} ${item.color ? `| ${this.t('color', 'Color')}: ${item.color}` : ''}</p>
                             </div>
                         </td>
                         <td class="cart-price">€${this.formatPrice(item.price || item.base_price)}</td>
@@ -393,7 +412,8 @@ class ShoppingCart {
                         </td>
                         <td class="cart-total">€${this.formatPrice(itemTotal)}</td>
                         <td class="cart-remove">
-                            <button class="remove-btn" onclick="cart.removeItem(${item.cart_item_id})">
+                            <button class="remove-btn" onclick="cart.removeItem(${item.cart_item_id})" 
+                                    title="${this.t('remove', 'Remove')}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -416,35 +436,39 @@ class ShoppingCart {
                 const total = subtotal + shipping + tax;
                 
                 cartSummary.innerHTML = `
-                    <h3>Order Summary</h3>
+                    <h3>${this.t('order_summary', 'Order Summary')}</h3>
                     <div class="summary-row">
-                        <span>Subtotal:</span>
+                        <span>${this.t('subtotal', 'Subtotal')}:</span>
                         <span>€${this.formatPrice(subtotal)}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Shipping:</span>
-                        <span>${shipping === 0 ? 'FREE' : '€' + this.formatPrice(shipping)}</span>
+                        <span>${this.t('shipping', 'Shipping')}:</span>
+                        <span>${shipping === 0 ? this.t('free', 'FREE') : '€' + this.formatPrice(shipping)}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Tax (19%):</span>
+                        <span>${this.t('tax', 'Tax')} (19%):</span>
                         <span>€${this.formatPrice(tax)}</span>
                     </div>
                     <div class="summary-row total">
-                        <strong>Total:</strong>
+                        <strong>${this.t('total', 'Total')}:</strong>
                         <strong>€${this.formatPrice(total)}</strong>
                     </div>
-                    <a href="/checkout" class="btn btn-primary btn-block">Proceed to Checkout</a>
+                    <a href="/checkout" class="btn btn-primary btn-block">${this.t('proceed_to_checkout', 'Proceed to Checkout')}</a>
                 `;
             }
         } else {
             cartTable.innerHTML = `
                 <div class="cart-empty-page">
                     <i class="fas fa-shopping-cart"></i>
-                    <h2>Your cart is empty</h2>
-                    <p>Looks like you haven't added anything to your cart yet.</p>
-                    <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                    <h2>${this.t('cart_empty', 'Your cart is empty')}</h2>
+                    <p>${this.t('cart_empty_message', 'Looks like you haven\'t added anything to your cart yet.')}</p>
+                    <a href="/shop" class="btn btn-primary">${this.t('continue_shopping', 'Continue Shopping')}</a>
                 </div>
             `;
+            
+            if (cartSummary) {
+                cartSummary.innerHTML = '';
+            }
         }
     }
     
@@ -525,7 +549,7 @@ class ShoppingCart {
             loader = document.createElement('div');
             loader.id = 'cartLoader';
             loader.className = 'cart-loader';
-            loader.innerHTML = '<div class="spinner"></div>';
+            loader.innerHTML = `<div class="spinner"></div><p>${this.t('loading', 'Loading...')}</p>`;
             document.body.appendChild(loader);
         }
         loader.classList.add('active');
@@ -543,7 +567,7 @@ class ShoppingCart {
         const notification = document.createElement('div');
         notification.className = `cart-notification notification-${type}`;
         notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
             <span>${message}</span>
         `;
         
@@ -567,10 +591,16 @@ class ShoppingCart {
 
 // Initialize cart when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    window.cart = new ShoppingCart();
+    // Only initialize if not already initialized by main.js
+    if (!window.cart) {
+        window.cart = new ShoppingCart();
+    }
 });
 
-// Add CSS for cart-specific styles
+// Make functions globally available
+window.ShoppingCart = ShoppingCart;
+
+// Add CSS for cart-specific styles (same as before, keeping all existing styles)
 const cartStyles = `
     .cart-loader {
         position: fixed;
@@ -580,6 +610,7 @@ const cartStyles = `
         bottom: 0;
         background: rgba(0,0,0,0.5);
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 9999;
@@ -602,22 +633,36 @@ const cartStyles = `
         animation: spin 1s linear infinite;
     }
     
+    .cart-loader p {
+        color: white;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+    
+    /* FIXED: Wrapper for proper centering */
+    .cart-empty-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        width: 100%;
+    }
+    
     /* FIXED: More specific selectors for empty cart centering */
-    #cartSidebar .cart-empty-centered,
-    .cart-sidebar .cart-empty-centered {
+    .cart-sidebar .cart-empty-centered,
+    #cartSidebar .cart-empty-centered {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        min-height: 300px !important;
         text-align: center !important;
         padding: 40px 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
     
-    #cartSidebar .cart-empty-centered i,
-    .cart-sidebar .cart-empty-centered i {
+    .cart-sidebar .cart-empty-centered i,
+    #cartSidebar .cart-empty-centered i {
         font-size: 64px !important;
         color: var(--text-muted) !important;
         margin-bottom: 20px !important;
@@ -625,25 +670,35 @@ const cartStyles = `
         display: block !important;
     }
     
-    #cartSidebar .cart-empty-centered p,
-    .cart-sidebar .cart-empty-centered p {
+    .cart-sidebar .cart-empty-centered p,
+    #cartSidebar .cart-empty-centered p {
         color: var(--text-secondary) !important;
         font-size: 16px !important;
         margin-bottom: 25px !important;
         display: block !important;
     }
     
-    #cartSidebar .cart-empty-centered .btn,
-    .cart-sidebar .cart-empty-centered .btn {
+    .cart-sidebar .cart-empty-centered .btn,
+    #cartSidebar .cart-empty-centered .btn {
         padding: 12px 30px !important;
         display: inline-block !important;
     }
     
-    /* Ensure cart sidebar content takes full height for centering */
-    #cartContent {
+    /* Ensure cart sidebar content is flexbox for centering */
+    #cartContent,
+    .cart-sidebar-content {
         min-height: 300px;
         display: flex;
         flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* When cart has items, reset flex properties */
+    #cartContent:has(.cart-items),
+    .cart-sidebar-content:has(.cart-items) {
+        align-items: stretch;
+        justify-content: flex-start;
     }
     
     @keyframes bounce {
@@ -656,6 +711,10 @@ const cartStyles = `
             transform: translateX(-100%);
             opacity: 0;
         }
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
     
     .quantity-controls {
@@ -701,6 +760,15 @@ const cartStyles = `
         height: 100%;
         background: var(--gradient-gold);
         transition: width 0.3s ease;
+    }
+    
+    .free-shipping-notice {
+        padding: 15px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        margin: 15px;
+        font-size: 14px;
     }
     
     .free-shipping-notice.success {
@@ -750,9 +818,80 @@ const cartStyles = `
         border-left-color: var(--gold-primary);
         color: var(--gold-primary);
     }
+    
+    /* Cart items styling */
+    .cart-items {
+        padding: 10px;
+    }
+    
+    .cart-item {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+    }
+    
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+    
+    .cart-item-image {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+    }
+    
+    .cart-item-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+    
+    .cart-item-details {
+        flex: 1;
+    }
+    
+    .cart-item-name {
+        font-weight: 500;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+    }
+    
+    .cart-item-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    
+    .cart-item-price {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .cart-item-remove {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 5px;
+        transition: color 0.3s ease;
+    }
+    
+    .cart-item-remove:hover {
+        color: #e74c3c;
+    }
 `;
 
-// Add cart styles to page
-const cartStyleElement = document.createElement('style');
-cartStyleElement.textContent = cartStyles;
-document.head.appendChild(cartStyleElement);
+// Add cart styles to page if not already added
+if (!document.getElementById('cartStyles')) {
+    const cartStyleElement = document.createElement('style');
+    cartStyleElement.id = 'cartStyles';
+    cartStyleElement.textContent = cartStyles;
+    document.head.appendChild(cartStyleElement);
+}
