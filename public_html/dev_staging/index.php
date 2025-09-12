@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Homepage
  * Location: /public_html/dev_staging/index.php
- * Updated: Added badge-based sorting for featured products
+ * Updated: Fixed category name translations in product cards
  */
 
 session_start();
@@ -11,8 +11,12 @@ require_once 'includes/language-handler.php';
 
 $pdo = getDBConnection();
 
-// Get featured products
-$featuredSql = "SELECT p.*, pi.image_url, c.category_name, c.slug as category_slug
+// Get featured products with category translations
+$featuredSql = "SELECT p.*, pi.image_url, 
+                c.category_name, 
+                c.category_name_en, 
+                c.category_name_ar,
+                c.slug as category_slug
                 FROM products p
                 LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
                 LEFT JOIN categories c ON p.category_id = c.category_id
@@ -103,12 +107,20 @@ $mainCategories = $categoriesStmt->fetchAll();
         <div class="container">
             <h2 class="section-title animate-on-scroll"><?= $lang['shop_by_category'] ?? 'Shop by Category' ?></h2>
             <div class="categories-grid">
-                <?php foreach ($mainCategories as $category): ?>
+                <?php foreach ($mainCategories as $category): 
+                    // Get translated category name
+                    $categoryName = $category['category_name'];
+                    if ($currentLang === 'en' && !empty($category['category_name_en'])) {
+                        $categoryName = $category['category_name_en'];
+                    } elseif ($currentLang === 'ar' && !empty($category['category_name_ar'])) {
+                        $categoryName = $category['category_name_ar'];
+                    }
+                ?>
                 <div class="category-card animate-on-scroll">
                     <a href="/category/<?= htmlspecialchars($category['slug']) ?>">
                         <div class="category-image" style="background-image: url('/assets/images/categories/<?= htmlspecialchars($category['slug']) ?>.jpg')">
                             <div class="category-overlay">
-                                <h3><?= htmlspecialchars($category['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')]) ?></h3>
+                                <h3><?= htmlspecialchars($categoryName) ?></h3>
                                 <span class="product-count"><?= $category['product_count'] ?> <?= $lang['products'] ?? 'Products' ?></span>
                             </div>
                         </div>
@@ -130,7 +142,7 @@ $mainCategories = $categoriesStmt->fetchAll();
                     <i class="fas fa-th"></i> <?= $lang['filter_all'] ?? 'All' ?>
                 </button>
                 <button class="filter-btn" data-filter="new">
-                    <i class="fas fa-star"></i></i> <?= $lang['filter_new'] ?? 'New' ?>
+                    <i class="fas fa-star"></i> <?= $lang['filter_new'] ?? 'New' ?>
                 </button>
                 <button class="filter-btn" data-filter="sale">
                     <i class="fas fa-tag"></i> <?= $lang['filter_sale'] ?? 'Sale' ?>
@@ -142,7 +154,22 @@ $mainCategories = $categoriesStmt->fetchAll();
             
             <div class="products-grid" id="featuredProductsGrid">
                 <?php foreach ($featuredProducts as $product): 
-                    $productName = $product['product_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $product['product_name'];
+                    // Get translated product name
+                    $productName = $product['product_name'];
+                    if ($currentLang === 'en' && !empty($product['product_name_en'])) {
+                        $productName = $product['product_name_en'];
+                    } elseif ($currentLang === 'ar' && !empty($product['product_name_ar'])) {
+                        $productName = $product['product_name_ar'];
+                    }
+                    
+                    // Get translated category name
+                    $categoryName = $product['category_name'];
+                    if ($currentLang === 'en' && !empty($product['category_name_en'])) {
+                        $categoryName = $product['category_name_en'];
+                    } elseif ($currentLang === 'ar' && !empty($product['category_name_ar'])) {
+                        $categoryName = $product['category_name_ar'];
+                    }
+                    
                     $price = $product['sale_price'] ?: $product['base_price'];
                     $originalPrice = $product['sale_price'] ? $product['base_price'] : null;
                     $discountPercent = $originalPrice ? round((($originalPrice - $price) / $originalPrice) * 100) : 0;
@@ -174,7 +201,7 @@ $mainCategories = $categoriesStmt->fetchAll();
                     </div>
                     
                     <div class="product-info">
-                        <p class="product-category"><?= htmlspecialchars($product['category_name']) ?></p>
+                        <p class="product-category"><?= htmlspecialchars($categoryName) ?></p>
                         <h3 class="product-name">
                             <a href="/product/<?= htmlspecialchars($product['product_slug']) ?>">
                                 <?= htmlspecialchars($productName) ?>
