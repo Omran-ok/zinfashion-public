@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - Main Styles
  * Location: /public_html/dev_staging/assets/css/main.css
- * Updated: Added header wrapper and fixed z-index hierarchy
+ * Updated: Added Quick View Modal styles
  */
 
 /* ========================================
@@ -290,7 +290,7 @@ a:hover {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-md);
-    z-index: 1100; /* Increased from 1000 */
+    z-index: 1100;
 }
 
 .lang-dropdown.active {
@@ -350,7 +350,7 @@ body.theme-light #themeIconDark { display: none; }
     background: var(--bg-secondary);
     padding: 20px 0;
     border-bottom: 1px solid var(--border-color);
-    position: relative; /* Changed from sticky */
+    position: relative;
     transition: all 0.3s ease;
 }
 
@@ -373,12 +373,12 @@ body.theme-light #themeIconDark { display: none; }
 .logo-img {
     height: 50px;
     width: auto;
-    filter: none !important; /* Ensure logo keeps original colors */
+    filter: none !important;
     transition: transform 0.3s ease, height 0.3s ease;
 }
 
 .header-wrapper.scrolled .logo-img {
-    height: 40px; /* Reduced from 50px */
+    height: 40px;
 }
 
 body.theme-light .logo-img {
@@ -423,7 +423,7 @@ body.theme-light .logo-img {
 }
 
 .header-wrapper.scrolled .search-form input {
-    padding: 10px 18px; /* Reduced padding */
+    padding: 10px 18px;
 }
 
 .search-form input::placeholder {
@@ -509,7 +509,7 @@ body.theme-light .logo-img {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-lg);
-    z-index: 1100; /* Increased from 1000 */
+    z-index: 1100;
 }
 
 .header-action-item:hover .account-dropdown {
@@ -640,7 +640,7 @@ body.theme-light .logo-img {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-lg);
-    z-index: 1099; /* Increased from 998 */
+    z-index: 1099;
 }
 
 .nav-item:hover .mega-menu {
@@ -721,11 +721,10 @@ body.theme-light .logo-img {
    ======================================== */
 
 html {
-    scroll-padding-top: 180px; /* Adjust based on header height */
+    scroll-padding-top: 180px;
 }
 
 .header-wrapper.scrolled ~ * {
-    /* Adjust scroll padding when header is compact */
     scroll-padding-top: 140px;
 }
 
@@ -1133,7 +1132,7 @@ body.theme-light .filter-btn.active {
     }
     
     .filter-btn i {
-        display: none; /* Hide icons on very small screens to save space */
+        display: none;
     }
 }
 
@@ -1676,7 +1675,7 @@ body.theme-light .footer-logo img {
     height: 100%;
     background: var(--bg-card);
     box-shadow: -5px 0 20px rgba(0,0,0,0.3);
-    z-index: 1201; /* Increased from 1001 */
+    z-index: 1201;
     transition: right 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -1748,7 +1747,7 @@ body.theme-light .footer-logo img {
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 1200; /* Increased from 1000 */
+    z-index: 1200;
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
@@ -1757,6 +1756,253 @@ body.theme-light .footer-logo img {
 .cart-overlay.active {
     opacity: 1;
     visibility: visible;
+}
+
+/* ========================================
+   QUICK VIEW MODAL STYLES
+   ======================================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    cursor: pointer;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+    z-index: 10;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 11;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: var(--gold-primary);
+    border-color: var(--gold-primary);
+    transform: rotate(90deg);
+}
+
+.modal-close i {
+    font-size: 18px;
+    color: var(--text-primary);
+}
+
+.modal-close:hover i {
+    color: var(--bg-primary);
+}
+
+/* Quick View Content */
+.quick-view-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 30px;
+}
+
+.quick-view-images {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-view-images img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    max-height: 500px;
+}
+
+.quick-view-info {
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-view-info h2 {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    font-family: 'Playfair Display', serif;
+}
+
+.quick-view-category {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.quick-view-price {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+.quick-view-description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    flex: 1;
+}
+
+.quick-view-stock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.stock-available {
+    color: #2ecc71;
+}
+
+.stock-unavailable {
+    color: #e74c3c;
+}
+
+.quick-view-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: auto;
+}
+
+.quick-view-actions .btn {
+    flex: 1;
+}
+
+/* Light theme adjustments for modal */
+body.theme-light .modal-content {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+body.theme-light .modal-close {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+body.theme-light .quick-view-images {
+    background: var(--bg-tertiary);
+}
+
+/* Responsive Quick View Modal */
+@media screen and (max-width: 767px) {
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .quick-view-content {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 20px;
+    }
+    
+    .quick-view-images {
+        max-height: 300px;
+    }
+    
+    .quick-view-actions {
+        flex-direction: column;
+    }
+    
+    .quick-view-actions .btn {
+        width: 100%;
+    }
+    
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .modal-close i {
+        font-size: 16px;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .quick-view-content {
+        padding: 15px;
+    }
+    
+    .quick-view-info h2 {
+        font-size: 1.4rem;
+    }
+    
+    .quick-view-price {
+        font-size: 1.1rem;
+    }
+    
+    .quick-view-description {
+        font-size: 13px;
+    }
 }
 
 /* ========================================
@@ -1805,7 +2051,7 @@ body.theme-light .footer-logo img {
     background: var(--bg-tertiary);
     border-top: 2px solid var(--gold-primary);
     padding: 20px;
-    z-index: 1202; /* Increased from 1002 */
+    z-index: 1202;
     transform: translateY(100%);
     transition: transform 0.3s ease;
 }
@@ -1878,7 +2124,7 @@ body.theme-light .footer-logo img {
     max-width: 320px;
     height: 100%;
     background: var(--bg-card);
-    z-index: 1200; /* Increased from 1003 */
+    z-index: 1200;
     transition: left 0.3s ease;
     overflow-y: auto;
 }
@@ -1898,7 +2144,7 @@ body.theme-light .footer-logo img {
 .mobile-logo {
     height: 30px;
     width: auto;
-    filter: none !important; /* Ensure logo keeps original colors */
+    filter: none !important;
 }
 
 .mobile-menu-close {
@@ -2031,12 +2277,12 @@ body.theme-light .footer-logo img {
 
 .language-selector {
     position: relative;
-    z-index: 1101; /* Ensure selector itself has high z-index */
+    z-index: 1101;
 }
 
 .lang-dropdown {
     position: absolute;
-    top: calc(100% + 5px); /* Clear positioning */
+    top: calc(100% + 5px);
     right: 0;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -2044,9 +2290,8 @@ body.theme-light .footer-logo img {
     padding: 8px 0;
     min-width: 150px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 99999 !important; /* Maximum z-index with !important */
+    z-index: 99999 !important;
     
-    /* Hidden by default */
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -2054,7 +2299,6 @@ body.theme-light .footer-logo img {
     transition: all 0.3s ease;
 }
 
-/* Active state - force visibility */
 .lang-dropdown.active {
     opacity: 1 !important;
     visibility: visible !important;
@@ -2062,12 +2306,10 @@ body.theme-light .footer-logo img {
     transform: translateY(0) !important;
 }
 
-/* Remove hover behavior to avoid conflicts */
 .language-selector:hover .lang-dropdown {
     /* Do nothing on hover - controlled by JavaScript */
 }
 
-/* Ensure dropdown appears above everything */
 .header-wrapper {
     position: sticky;
     top: 0;
@@ -2076,10 +2318,9 @@ body.theme-light .footer-logo img {
     transition: all 0.3s ease;
 }
 
-/* Top banner should not overflow */
 .top-banner {
     position: relative;
-    overflow: visible; /* Changed from hidden to visible */
+    overflow: visible;
     z-index: 1000;
 }
 
@@ -2104,7 +2345,6 @@ body.theme-light .footer-logo img {
    LOGO COLOR FIX - IMPORTANT OVERRIDES
    ======================================== */
 
-/* Ensure logo NEVER gets inverted or filtered */
 .logo-img,
 .footer-logo img,
 .mobile-logo,
@@ -2115,7 +2355,6 @@ img[alt="ZIN Fashion"] {
     opacity: 1 !important;
 }
 
-/* Remove any theme-based logo filtering */
 body.theme-dark .logo-img,
 body.theme-dark .footer-logo img,
 body.theme-dark .mobile-logo,
