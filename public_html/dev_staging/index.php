@@ -264,6 +264,7 @@ $mainCategories = $categoriesStmt->fetchAll();
     <?php include 'includes/components/footer.php'; ?>
     
     <!-- Scripts -->
+    <script src="/assets/js/translations.js"></script>
     <script src="/assets/js/cart.js"></script>
     <script src="/assets/js/main.js"></script>
     <script src="/assets/js/animations.js"></script>
