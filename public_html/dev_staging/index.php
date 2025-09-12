@@ -264,10 +264,10 @@ $mainCategories = $categoriesStmt->fetchAll();
     <?php include 'includes/components/footer.php'; ?>
     
     <!-- Scripts -->
+    <script src="/assets/js/cart.js"></script>
     <script src="/assets/js/main.js"></script>
     <script src="/assets/js/animations.js"></script>
     <script src="/assets/js/slider.js"></script>
-    <script src="/assets/js/cart.js"></script>
     <script src="/assets/js/product-filters.js"></script>
 </body>
 </html>
