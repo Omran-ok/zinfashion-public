@@ -1,11 +1,11 @@
 <?php
 // ===================================
-// API Handler File - Fixed Cart Issue
+// API Handler File - With Translation Support
 // Location: /public_html/dev_staging/includes/api.php
 // ===================================
 
 /**
- * ZIN Fashion - API Handler
+ * ZIN Fashion - API Handler with Translation Support
  */
 
 // Check if this is an API request (both old and new format)
@@ -73,12 +73,64 @@ if (isset($_GET['api']) || isset($_GET['action'])) {
 }
 
 /**
- * Handle Cart Count Request (New for header.php)
+ * Get product name based on current language
+ */
+function getTranslatedProductName($product, $currentLang = null) {
+    if (!$currentLang) {
+        $currentLang = $_SESSION['language'] ?? 'de';
+    }
+    
+    // Default to German (base) name
+    $productName = $product['product_name'];
+    
+    // Use translated name if available
+    if ($currentLang === 'en' && !empty($product['product_name_en'])) {
+        $productName = $product['product_name_en'];
+    } elseif ($currentLang === 'ar' && !empty($product['product_name_ar'])) {
+        $productName = $product['product_name_ar'];
+    }
+    
+    return $productName;
+}
+
+/**
+ * Get color name based on current language
+ */
+function getTranslatedColorName($color, $currentLang = null) {
+    if (!$color) return null;
+    
+    if (!$currentLang) {
+        $currentLang = $_SESSION['language'] ?? 'de';
+    }
+    
+    // Default to German (base) name
+    $colorName = $color['color_name'] ?? $color;
+    
+    // Use translated name if available
+    if ($currentLang === 'en' && !empty($color['color_name_en'])) {
+        $colorName = $color['color_name_en'];
+    } elseif ($currentLang === 'ar' && !empty($color['color_name_ar'])) {
+        $colorName = $color['color_name_ar'];
+    }
+    
+    return $colorName;
+}
+
+/**
+ * Get size name based on current language (if translations are available)
+ */
+function getTranslatedSizeName($size, $currentLang = null) {
+    // For now, sizes are usually universal (S, M, L, XL, etc.)
+    // But if you have translations, implement here
+    return $size['size_name'] ?? $size;
+}
+
+/**
+ * Handle Cart Count Request
  */
 function handleCartCount($pdo) {
     $count = 0;
     
-    // If user is logged in, get from database
     if (isLoggedIn()) {
         $userId = getCurrentUserId();
         $sql = "SELECT SUM(quantity) as count FROM cart_items WHERE user_id = :user_id";
@@ -87,7 +139,6 @@ function handleCartCount($pdo) {
         $result = $stmt->fetch();
         $count = $result['count'] ?? 0;
     } else {
-        // Get from session for guests
         if (isset($_SESSION['cart'])) {
             $count = array_sum($_SESSION['cart']);
         }
@@ -97,12 +148,11 @@ function handleCartCount($pdo) {
 }
 
 /**
- * Handle Wishlist Count Request (New for header.php)
+ * Handle Wishlist Count Request
  */
 function handleWishlistCount($pdo) {
     $count = 0;
     
-    // If user is logged in, get from database
     if (isLoggedIn()) {
         $userId = getCurrentUserId();
         $sql = "SELECT COUNT(*) as count FROM wishlists WHERE user_id = :user_id";
@@ -111,7 +161,6 @@ function handleWishlistCount($pdo) {
         $result = $stmt->fetch();
         $count = $result['count'] ?? 0;
     } else {
-        // Get from session for guests
         if (isset($_SESSION['wishlist'])) {
             $count = count($_SESSION['wishlist']);
         }
@@ -125,6 +174,7 @@ function handleWishlistCount($pdo) {
  */
 function handleCategories($pdo) {
     $parentId = isset($_GET['parent']) ? intval($_GET['parent']) : null;
+    $currentLang = $_SESSION['language'] ?? 'de';
     
     $sql = "SELECT * FROM categories WHERE is_active = 1 AND ";
     $sql .= $parentId ? "parent_id = :parent_id" : "parent_id IS NULL";
@@ -138,8 +188,18 @@ function handleCategories($pdo) {
     
     $categories = $stmt->fetchAll();
     
-    // Add product count for each category
+    // Translate category names and add product count
     foreach ($categories as &$category) {
+        // Translate category name
+        $categoryName = $category['category_name'];
+        if ($currentLang === 'en' && !empty($category['category_name_en'])) {
+            $categoryName = $category['category_name_en'];
+        } elseif ($currentLang === 'ar' && !empty($category['category_name_ar'])) {
+            $categoryName = $category['category_name_ar'];
+        }
+        $category['display_name'] = $categoryName;
+        
+        // Add product count
         $countSql = "SELECT COUNT(*) as count FROM products WHERE category_id = :cat_id AND is_active = 1";
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute(['cat_id' => $category['category_id']]);
@@ -158,8 +218,8 @@ function handleProducts($pdo) {
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $limit = PRODUCTS_PER_PAGE;
     $offset = ($page - 1) * $limit;
+    $currentLang = $_SESSION['language'] ?? 'de';
     
-    // Include multilingual product names in the query
     $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, c.category_name, c.slug as category_slug,
             (SELECT pi.image_url FROM product_images pi 
              WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
@@ -169,13 +229,11 @@ function handleProducts($pdo) {
     
     $params = [];
     
-    // Category filter
     if ($category !== 'all') {
         $sql .= " AND c.slug = :category";
         $params['category'] = $category;
     }
     
-    // Additional filters - Only filter by badge, don't override it
     switch ($filter) {
         case 'new':
             $sql .= " AND p.badge = 'new'";
@@ -188,7 +246,6 @@ function handleProducts($pdo) {
             break;
     }
     
-    // Add sorting
     $sort = isset($_GET['sort']) ? sanitizeInput($_GET['sort']) : 'featured';
     switch ($sort) {
         case 'price-asc':
@@ -216,12 +273,11 @@ function handleProducts($pdo) {
     
     $products = $stmt->fetchAll();
     
-    // Process products for frontend display
     foreach ($products as &$product) {
-        // Add image URL
-        $product['image'] = $product['image'] ?: '/assets/images/placeholder.jpg';
+        // Translate product name
+        $product['product_name'] = getTranslatedProductName($product, $currentLang);
         
-        // Format prices for display
+        $product['image'] = $product['image'] ?: '/assets/images/placeholder.jpg';
         $product['formatted_price'] = '€' . number_format($product['base_price'], 2, ',', '.');
         $product['has_sale'] = false;
         
@@ -232,11 +288,9 @@ function handleProducts($pdo) {
             $product['old_price'] = $product['base_price'];
         }
         
-        // Use the badge from database, don't override it
-        $badge = $product['badge']; // This comes from the database
+        $badge = $product['badge'];
         $product['badge_text'] = null;
         
-        // Only set badge_text if there's actually a badge
         if (!empty($badge)) {
             switch ($badge) {
                 case 'new':
@@ -256,7 +310,6 @@ function handleProducts($pdo) {
             }
         }
         
-        // If no badge but has sale price, show discount percentage
         if (empty($badge) && $product['sale_price'] && $product['sale_price'] > 0) {
             $discount = round((($product['base_price'] - $product['sale_price']) / $product['base_price']) * 100);
             $product['badge'] = 'sale';
@@ -264,13 +317,11 @@ function handleProducts($pdo) {
         }
     }
     
-    // Get total count for pagination
     $countSql = "SELECT COUNT(*) FROM products p JOIN categories c ON p.category_id = c.category_id WHERE p.is_active = 1";
     if ($category !== 'all') {
         $countSql .= " AND c.slug = :category";
     }
     
-    // Apply same filter to count query
     switch ($filter) {
         case 'new':
             $countSql .= " AND p.badge = 'new'";
@@ -305,6 +356,7 @@ function handleProducts($pdo) {
  */
 function handleSingleProduct($pdo) {
     $productId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $currentLang = $_SESSION['language'] ?? 'de';
     
     if (!$productId) {
         http_response_code(400);
@@ -327,15 +379,26 @@ function handleSingleProduct($pdo) {
         return;
     }
     
+    // Translate product name
+    $product['product_name'] = getTranslatedProductName($product, $currentLang);
+    
     // Get product variants with size and color information
-    $variantSql = "SELECT pv.*, s.size_name, c.color_name, c.color_code 
+    $variantSql = "SELECT pv.*, s.size_name, c.color_name, c.color_name_en, c.color_name_ar, c.color_code 
                    FROM product_variants pv
                    LEFT JOIN sizes s ON pv.size_id = s.size_id
                    LEFT JOIN colors c ON pv.color_id = c.color_id
                    WHERE pv.product_id = :product_id AND pv.is_available = 1";
     $variantStmt = $pdo->prepare($variantSql);
     $variantStmt->execute(['product_id' => $productId]);
-    $product['variants'] = $variantStmt->fetchAll();
+    $variants = $variantStmt->fetchAll();
+    
+    // Translate variant colors
+    foreach ($variants as &$variant) {
+        if ($variant['color_name']) {
+            $variant['color_name'] = getTranslatedColorName($variant, $currentLang);
+        }
+    }
+    $product['variants'] = $variants;
     
     // Get product images
     $imageSql = "SELECT * FROM product_images WHERE product_id = :product_id ORDER BY is_primary DESC, display_order";
@@ -344,7 +407,7 @@ function handleSingleProduct($pdo) {
     $product['images'] = $imageStmt->fetchAll();
     
     // Get related products
-    $relatedSql = "SELECT p.*, c.category_name,
+    $relatedSql = "SELECT p.*, p.product_name_en, p.product_name_ar, c.category_name,
                    (SELECT pi.image_url FROM product_images pi 
                     WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
                    FROM products p
@@ -359,7 +422,13 @@ function handleSingleProduct($pdo) {
         'category_id' => $product['category_id'],
         'product_id' => $productId
     ]);
-    $product['related_products'] = $relatedStmt->fetchAll();
+    $relatedProducts = $relatedStmt->fetchAll();
+    
+    // Translate related product names
+    foreach ($relatedProducts as &$relatedProduct) {
+        $relatedProduct['product_name'] = getTranslatedProductName($relatedProduct, $currentLang);
+    }
+    $product['related_products'] = $relatedProducts;
     
     echo json_encode($product);
 }
@@ -369,13 +438,14 @@ function handleSingleProduct($pdo) {
  */
 function handleSearch($pdo) {
     $query = isset($_GET['q']) ? sanitizeInput($_GET['q']) : '';
+    $currentLang = $_SESSION['language'] ?? 'de';
     
     if (strlen($query) < 2) {
         echo json_encode(['results' => []]);
         return;
     }
     
-    $sql = "SELECT p.*, c.category_name,
+    $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, c.category_name,
             (SELECT pi.image_url FROM product_images pi 
              WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image
             FROM products p
@@ -395,6 +465,11 @@ function handleSearch($pdo) {
     
     $results = $stmt->fetchAll();
     
+    // Translate product names in search results
+    foreach ($results as &$result) {
+        $result['product_name'] = getTranslatedProductName($result, $currentLang);
+    }
+    
     echo json_encode(['results' => $results]);
 }
 
@@ -410,7 +485,7 @@ function handleNewsletter($pdo) {
     
     $data = json_decode(file_get_contents('php://input'), true);
     $email = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
-    $language = sanitizeInput($data['language'] ?? 'de');
+    $language = sanitizeInput($data['language'] ?? $_SESSION['language'] ?? 'de');
     
     if (!$email) {
         http_response_code(400);
@@ -418,7 +493,6 @@ function handleNewsletter($pdo) {
         return;
     }
     
-    // Check if already subscribed
     $checkSql = "SELECT subscriber_id, is_active FROM newsletter_subscribers WHERE email = :email";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute(['email' => $email]);
@@ -428,7 +502,6 @@ function handleNewsletter($pdo) {
         if ($subscriber['is_active']) {
             echo json_encode(['success' => true, 'message' => 'Already subscribed']);
         } else {
-            // Reactivate subscription
             $updateSql = "UPDATE newsletter_subscribers SET is_active = 1, subscribed_at = NOW() WHERE subscriber_id = :id";
             $updateStmt = $pdo->prepare($updateSql);
             $updateStmt->execute(['id' => $subscriber['subscriber_id']]);
@@ -437,40 +510,45 @@ function handleNewsletter($pdo) {
         return;
     }
     
-    // New subscription
     $sql = "INSERT INTO newsletter_subscribers (email, preferred_language, subscribed_at) VALUES (:email, :language, NOW())";
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['email' => $email, 'language' => $language]);
     
-    // Log activity
     logActivity('newsletter_subscription', ['email' => $email]);
     
     echo json_encode(['success' => true, 'message' => 'Successfully subscribed']);
 }
 
 /**
- * Handle Cart Operations - FIXED EMPTY CART ISSUE
+ * Handle Cart Operations - WITH TRANSLATION SUPPORT
  */
 function handleCart($pdo) {
     $method = $_SERVER['REQUEST_METHOD'];
+    $currentLang = $_SESSION['language'] ?? 'de';
     
-    // Initialize session cart if not exists
     if (!isset($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
     
     switch ($method) {
         case 'GET':
-            // Get cart items
             $items = [];
             $total = 0;
             
             if (isLoggedIn()) {
-                // Get from database for logged-in users
                 $userId = getCurrentUserId();
-                $sql = "SELECT ci.*, p.product_name, p.product_name_en, p.product_name_ar, 
-                        p.base_price, p.sale_price, pv.variant_sku,
-                        s.size_name, c.color_name,
+                $sql = "SELECT ci.*, 
+                        p.product_id,
+                        p.product_name, 
+                        p.product_name_en, 
+                        p.product_name_ar, 
+                        p.base_price, 
+                        p.sale_price, 
+                        pv.variant_sku,
+                        s.size_name, 
+                        c.color_name,
+                        c.color_name_en,
+                        c.color_name_ar,
                         (SELECT pi.image_url FROM product_images pi 
                          WHERE pi.product_id = p.product_id AND pi.is_primary = 1 LIMIT 1) as image_url
                         FROM cart_items ci
@@ -485,6 +563,15 @@ function handleCart($pdo) {
                 $cartItems = $stmt->fetchAll();
                 
                 foreach ($cartItems as $item) {
+                    // Translate product name
+                    $productName = getTranslatedProductName($item, $currentLang);
+                    
+                    // Translate color name
+                    $colorName = null;
+                    if ($item['color_name']) {
+                        $colorName = getTranslatedColorName($item, $currentLang);
+                    }
+                    
                     $price = $item['sale_price'] ?: $item['base_price'];
                     $subtotal = $price * $item['quantity'];
                     
@@ -492,9 +579,9 @@ function handleCart($pdo) {
                         'cart_item_id' => $item['cart_item_id'],
                         'product_id' => $item['product_id'],
                         'variant_id' => $item['variant_id'],
-                        'product_name' => $item['product_name'],
+                        'product_name' => $productName,
                         'size' => $item['size_name'],
-                        'color' => $item['color_name'],
+                        'color' => $colorName,
                         'base_price' => $item['base_price'],
                         'sale_price' => $item['sale_price'],
                         'price' => $price,
@@ -506,9 +593,8 @@ function handleCart($pdo) {
                     $total += $subtotal;
                 }
             } else {
-                // Get from session for guests
                 foreach ($_SESSION['cart'] as $productId => $quantity) {
-                    $sql = "SELECT p.*, pi.image_url 
+                    $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, pi.image_url 
                             FROM products p
                             LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
                             WHERE p.product_id = :product_id AND p.is_active = 1";
@@ -518,13 +604,14 @@ function handleCart($pdo) {
                     $product = $stmt->fetch();
                     
                     if ($product) {
+                        $productName = getTranslatedProductName($product, $currentLang);
                         $price = $product['sale_price'] ?: $product['base_price'];
                         $subtotal = $price * $quantity;
                         
                         $items[] = [
                             'cart_item_id' => $productId,
                             'product_id' => $productId,
-                            'product_name' => $product['product_name'],
+                            'product_name' => $productName,
                             'base_price' => $product['base_price'],
                             'sale_price' => $product['sale_price'],
                             'price' => $price,
@@ -538,13 +625,11 @@ function handleCart($pdo) {
                 }
             }
             
-            // FIXED: Calculate shipping only if there are items
             $shipping = 0;
             if (count($items) > 0) {
                 $shipping = $total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
             }
             
-            // FIXED: Calculate total correctly - don't add shipping if cart is empty
             $finalTotal = $total;
             if (count($items) > 0) {
                 $finalTotal = $total + $shipping;
@@ -561,7 +646,6 @@ function handleCart($pdo) {
             break;
             
         case 'POST':
-            // Add to cart
             $data = json_decode(file_get_contents('php://input'), true);
             $productId = intval($data['product_id'] ?? 0);
             $variantId = intval($data['variant_id'] ?? 0);
@@ -573,7 +657,6 @@ function handleCart($pdo) {
                 return;
             }
             
-            // Check if product exists
             $sql = "SELECT product_id FROM products WHERE product_id = :product_id AND is_active = 1";
             $stmt = $pdo->prepare($sql);
             $stmt->execute(['product_id' => $productId]);
@@ -585,10 +668,8 @@ function handleCart($pdo) {
             }
             
             if (isLoggedIn()) {
-                // Add to database for logged-in users
                 $userId = getCurrentUserId();
                 
-                // Check if item already in cart
                 $checkSql = "SELECT cart_item_id, quantity FROM cart_items 
                             WHERE user_id = :user_id AND variant_id = :variant_id";
                 $checkStmt = $pdo->prepare($checkSql);
@@ -596,12 +677,10 @@ function handleCart($pdo) {
                 $existing = $checkStmt->fetch();
                 
                 if ($existing) {
-                    // Update quantity
                     $updateSql = "UPDATE cart_items SET quantity = quantity + :quantity WHERE cart_item_id = :id";
                     $updateStmt = $pdo->prepare($updateSql);
                     $updateStmt->execute(['quantity' => $quantity, 'id' => $existing['cart_item_id']]);
                 } else {
-                    // Insert new item
                     $insertSql = "INSERT INTO cart_items (user_id, variant_id, quantity) VALUES (:user_id, :variant_id, :quantity)";
                     $insertStmt = $pdo->prepare($insertSql);
                     $insertStmt->execute([
@@ -611,7 +690,6 @@ function handleCart($pdo) {
                     ]);
                 }
             } else {
-                // Add to session for guests
                 if (isset($_SESSION['cart'][$productId])) {
                     $_SESSION['cart'][$productId] += $quantity;
                 } else {
@@ -623,7 +701,6 @@ function handleCart($pdo) {
             break;
             
         case 'PUT':
-            // Update cart item
             $data = json_decode(file_get_contents('php://input'), true);
             $itemId = intval($data['item_id'] ?? 0);
             $quantity = intval($data['quantity'] ?? 1);
@@ -635,7 +712,6 @@ function handleCart($pdo) {
             }
             
             if (isLoggedIn()) {
-                // Update in database
                 $userId = getCurrentUserId();
                 $sql = "UPDATE cart_items SET quantity = :quantity 
                        WHERE cart_item_id = :item_id AND user_id = :user_id";
@@ -646,7 +722,6 @@ function handleCart($pdo) {
                     'user_id' => $userId
                 ]);
             } else {
-                // Update in session
                 if (isset($_SESSION['cart'][$itemId])) {
                     $_SESSION['cart'][$itemId] = $quantity;
                 }
@@ -656,7 +731,6 @@ function handleCart($pdo) {
             break;
             
         case 'DELETE':
-            // Remove from cart
             $itemId = intval($_GET['item_id'] ?? 0);
             
             if (!$itemId) {
@@ -666,13 +740,11 @@ function handleCart($pdo) {
             }
             
             if (isLoggedIn()) {
-                // Remove from database
                 $userId = getCurrentUserId();
                 $sql = "DELETE FROM cart_items WHERE cart_item_id = :item_id AND user_id = :user_id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute(['item_id' => $itemId, 'user_id' => $userId]);
             } else {
-                // Remove from session
                 if (isset($_SESSION['cart'][$itemId])) {
                     unset($_SESSION['cart'][$itemId]);
                 }
@@ -692,21 +764,19 @@ function handleCart($pdo) {
  */
 function handleWishlist($pdo) {
     $method = $_SERVER['REQUEST_METHOD'];
+    $currentLang = $_SESSION['language'] ?? 'de';
     
-    // Initialize session wishlist if not exists
     if (!isset($_SESSION['wishlist'])) {
         $_SESSION['wishlist'] = [];
     }
     
     switch ($method) {
         case 'GET':
-            // Get wishlist items
             $items = [];
             
             if (isLoggedIn()) {
-                // Get from database for logged-in users
                 $userId = getCurrentUserId();
-                $sql = "SELECT p.*, pi.image_url 
+                $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, pi.image_url 
                         FROM wishlists w
                         JOIN products p ON w.product_id = p.product_id
                         LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
@@ -717,12 +787,12 @@ function handleWishlist($pdo) {
                 $items = $stmt->fetchAll();
                 
                 foreach ($items as &$item) {
+                    $item['product_name'] = getTranslatedProductName($item, $currentLang);
                     $item['image_url'] = $item['image_url'] ?: '/assets/images/placeholder.jpg';
                 }
             } else {
-                // Get from session for guests
                 foreach ($_SESSION['wishlist'] as $productId) {
-                    $sql = "SELECT p.*, pi.image_url 
+                    $sql = "SELECT p.*, p.product_name_en, p.product_name_ar, pi.image_url 
                             FROM products p
                             LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
                             WHERE p.product_id = :product_id AND p.is_active = 1";
@@ -732,6 +802,7 @@ function handleWishlist($pdo) {
                     $product = $stmt->fetch();
                     
                     if ($product) {
+                        $product['product_name'] = getTranslatedProductName($product, $currentLang);
                         $product['image_url'] = $product['image_url'] ?: '/assets/images/placeholder.jpg';
                         $items[] = $product;
                     }
@@ -742,7 +813,6 @@ function handleWishlist($pdo) {
             break;
             
         case 'POST':
-            // Add to wishlist
             $data = json_decode(file_get_contents('php://input'), true);
             $productId = intval($data['product_id'] ?? 0);
             
@@ -753,10 +823,8 @@ function handleWishlist($pdo) {
             }
             
             if (isLoggedIn()) {
-                // Add to database for logged-in users
                 $userId = getCurrentUserId();
                 
-                // Check if already in wishlist
                 $checkSql = "SELECT wishlist_id FROM wishlists WHERE user_id = :user_id AND product_id = :product_id";
                 $checkStmt = $pdo->prepare($checkSql);
                 $checkStmt->execute(['user_id' => $userId, 'product_id' => $productId]);
@@ -767,7 +835,6 @@ function handleWishlist($pdo) {
                     $insertStmt->execute(['user_id' => $userId, 'product_id' => $productId]);
                 }
             } else {
-                // Add to session for guests
                 if (!in_array($productId, $_SESSION['wishlist'])) {
                     $_SESSION['wishlist'][] = $productId;
                 }
@@ -777,7 +844,6 @@ function handleWishlist($pdo) {
             break;
             
         case 'DELETE':
-            // Remove from wishlist
             $productId = intval($_GET['product_id'] ?? 0);
             
             if (!$productId) {
@@ -787,15 +853,13 @@ function handleWishlist($pdo) {
             }
             
             if (isLoggedIn()) {
-                // Remove from database
                 $userId = getCurrentUserId();
                 $sql = "DELETE FROM wishlists WHERE user_id = :user_id AND product_id = :product_id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute(['user_id' => $userId, 'product_id' => $productId]);
             } else {
-                // Remove from session
                 $_SESSION['wishlist'] = array_diff($_SESSION['wishlist'], [$productId]);
-                $_SESSION['wishlist'] = array_values($_SESSION['wishlist']); // Re-index array
+                $_SESSION['wishlist'] = array_values($_SESSION['wishlist']);
             }
             
             echo json_encode(['success' => true, 'message' => 'Removed from wishlist']);
