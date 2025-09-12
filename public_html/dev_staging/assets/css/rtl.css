@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - RTL Support for Arabic
  * Location: /public_html/dev_staging/assets/css/rtl.css
- * Updated: Only animations disabled, layout preserved
+ * Updated: Fixed phone number direction and contact/payment alignment
  */
 
 /* ========================================
@@ -266,16 +266,25 @@ html[dir="rtl"] .footer-content {
     direction: rtl;
 }
 
+/* Social Links - align to the right */
 html[dir="rtl"] .social-links {
     flex-direction: row-reverse;
+    justify-content: flex-end;
 }
 
 html[dir="rtl"] .footer-links a:hover {
     transform: translateX(-5px);
 }
 
+/* Updated Contact Items for better alignment */
+html[dir="rtl"] .contact-info {
+    text-align: right;
+}
+
 html[dir="rtl"] .contact-item {
     flex-direction: row-reverse;
+    justify-content: flex-end;
+    text-align: right;
 }
 
 html[dir="rtl"] .contact-item i {
@@ -283,8 +292,26 @@ html[dir="rtl"] .contact-item i {
     margin-left: 12px;
 }
 
+/* Keep phone numbers in LTR direction */
+html[dir="rtl"] .contact-item a[href^="tel:"] {
+    direction: ltr;
+    unicode-bidi: embed;
+    text-align: right;
+    display: inline-block;
+}
+
+/* Payment Methods alignment */
+html[dir="rtl"] .payment-methods {
+    text-align: right;
+}
+
+html[dir="rtl"] .payment-methods h5 {
+    text-align: right;
+}
+
 html[dir="rtl"] .payment-icons {
     flex-direction: row-reverse;
+    justify-content: flex-end;
 }
 
 /* ========================================
@@ -423,6 +450,13 @@ html[dir="rtl"] select {
     direction: rtl;
 }
 
+/* Keep email and phone inputs in LTR */
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="tel"] {
+    direction: ltr;
+    text-align: left;
+}
+
 html[dir="rtl"] .form-group label {
     text-align: right;
 }
@@ -533,5 +567,14 @@ html[dir="rtl"] li {
     
     html[dir="rtl"] .cookie-content {
         flex-direction: column;
+    }
+    
+    /* Mobile footer adjustments */
+    html[dir="rtl"] .contact-info {
+        text-align: right;
+    }
+    
+    html[dir="rtl"] .payment-icons {
+        justify-content: flex-end;
     }
 }
