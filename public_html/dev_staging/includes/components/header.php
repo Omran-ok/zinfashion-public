@@ -2,15 +2,24 @@
 /**
  * ZIN Fashion - Header Component
  * Location: /public_html/dev_staging/includes/components/header.php
+ * Updated: Fixed subcategory translations
  */
 
 // Get cart and wishlist counts
 $cartCount = getCartCount();
 $wishlistCount = isset($_SESSION['wishlist']) ? count($_SESSION['wishlist']) : 0;
 
-// Get all categories for mega menu
+// Get all categories for mega menu with translated subcategories
 $menuSql = "SELECT c.*, 
-            (SELECT GROUP_CONCAT(CONCAT(category_id, ':', category_name, ':', slug) SEPARATOR '|') 
+            (SELECT GROUP_CONCAT(
+                CONCAT(
+                    category_id, ':', 
+                    category_name, ':', 
+                    IFNULL(category_name_en, category_name), ':',
+                    IFNULL(category_name_ar, category_name), ':',
+                    slug
+                ) SEPARATOR '|'
+            ) 
              FROM categories 
              WHERE parent_id = c.category_id AND is_active = 1 
              ORDER BY display_order) as subcategories
@@ -172,7 +181,25 @@ $menuCategories = $menuStmt->fetchAll();
                                 <h4><?= htmlspecialchars($categoryName) ?></h4>
                                 <ul>
                                     <?php foreach ($subcategories as $subcat): 
-                                        list($subId, $subName, $subSlug) = explode(':', $subcat);
+                                        $subcatParts = explode(':', $subcat);
+                                        if (count($subcatParts) >= 5) {
+                                            $subId = $subcatParts[0];
+                                            $subNameDe = $subcatParts[1];
+                                            $subNameEn = $subcatParts[2];
+                                            $subNameAr = $subcatParts[3];
+                                            $subSlug = $subcatParts[4];
+                                            
+                                            // Select the appropriate translation
+                                            $subName = $subNameDe;
+                                            if ($currentLang === 'en') {
+                                                $subName = $subNameEn;
+                                            } elseif ($currentLang === 'ar') {
+                                                $subName = $subNameAr;
+                                            }
+                                        } else {
+                                            // Fallback for old format
+                                            list($subId, $subName, $subSlug) = explode(':', $subcat);
+                                        }
                                     ?>
                                     <li>
                                         <a href="/category/<?= htmlspecialchars($subSlug) ?>">
@@ -218,7 +245,7 @@ $menuCategories = $menuStmt->fetchAll();
         </div>
     </nav>
     
-    <!-- Add this in your header.php or main template file after language includes -->
+    <!-- Cart Translations Script -->
     <script>
     window.cartTranslations = {
         // Cart messages
@@ -302,7 +329,25 @@ $menuCategories = $menuStmt->fetchAll();
                 <?php if (!empty($subcategories)): ?>
                 <ul class="mobile-submenu">
                     <?php foreach ($subcategories as $subcat): 
-                        list($subId, $subName, $subSlug) = explode(':', $subcat);
+                        $subcatParts = explode(':', $subcat);
+                        if (count($subcatParts) >= 5) {
+                            $subId = $subcatParts[0];
+                            $subNameDe = $subcatParts[1];
+                            $subNameEn = $subcatParts[2];
+                            $subNameAr = $subcatParts[3];
+                            $subSlug = $subcatParts[4];
+                            
+                            // Select the appropriate translation
+                            $subName = $subNameDe;
+                            if ($currentLang === 'en') {
+                                $subName = $subNameEn;
+                            } elseif ($currentLang === 'ar') {
+                                $subName = $subNameAr;
+                            }
+                        } else {
+                            // Fallback for old format
+                            list($subId, $subName, $subSlug) = explode(':', $subcat);
+                        }
                     ?>
                     <li><a href="/category/<?= htmlspecialchars($subSlug) ?>"><?= htmlspecialchars($subName) ?></a></li>
                     <?php endforeach; ?>
