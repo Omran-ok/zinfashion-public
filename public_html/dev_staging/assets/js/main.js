@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - Main JavaScript
  * Location: /public_html/dev_staging/assets/js/main.js
- * Updated: Removed conflicting cart display functions
+ * Updated: Fixed Quick View Modal positioning and structure
  */
 
 // ========================================
@@ -551,10 +551,11 @@ document.addEventListener('click', function(e) {
 });
 
 // ========================================
-// Quick View Modal
+// Quick View Modal - FIXED VERSION
 // ========================================
 async function openQuickView(productId) {
     try {
+        // Fetch product data
         const response = await fetch(`/api.php?action=product&id=${productId}`);
         const product = await response.json();
         
@@ -563,23 +564,63 @@ async function openQuickView(productId) {
         }
     } catch (error) {
         console.error('Error loading product:', error);
+        showNotification('Failed to load product details', 'error');
     }
 }
 
 function showQuickViewModal(product) {
+    // Remove any existing modal first
+    const existingModal = document.getElementById('quickViewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Get current language and translations
+    const currentLang = document.documentElement.lang || 'de';
+    const translations = window.translations || {};
+    
+    // Helper function to get translated text
+    const t = (key, fallback) => {
+        return translations[key] || fallback;
+    };
+    
+    // Get translated product name based on language
+    const productName = currentLang === 'en' && product.product_name_en ? product.product_name_en :
+                       currentLang === 'ar' && product.product_name_ar ? product.product_name_ar :
+                       product.product_name;
+    
+    // Get translated category name based on language
+    const categoryName = currentLang === 'en' && product.category_name_en ? product.category_name_en :
+                        currentLang === 'ar' && product.category_name_ar ? product.category_name_ar :
+                        product.category_name;
+    
+    // Get translated description based on language
+    const description = currentLang === 'en' && product.description_en ? product.description_en :
+                       currentLang === 'ar' && product.description_ar ? product.description_ar :
+                       product.description || t('no_description', 'No description available.');
+    
+    // Stock status translations
+    const inStockText = t('in_stock', 'In Stock');
+    const outOfStockText = t('out_of_stock', 'Out of Stock');
+    const addToCartText = t('add_to_cart', 'Add to Cart');
+    const viewDetailsText = t('view_details', 'View Details');
+    const closeText = t('close', 'Close');
+    
+    // Create modal HTML with proper structure and translations
     const modalHtml = `
         <div class="modal" id="quickViewModal">
-            <div class="modal-overlay" onclick="closeQuickView()"></div>
+            <div class="modal-overlay"></div>
             <div class="modal-content">
-                <button class="modal-close" onclick="closeQuickView()">
+                <button class="modal-close" aria-label="${closeText}">
                     <i class="fas fa-times"></i>
                 </button>
                 <div class="quick-view-content">
                     <div class="quick-view-images">
-                        <img src="${product.image_url || '/assets/images/placeholder.jpg'}" alt="${product.product_name}">
+                        <img src="${product.image_url || '/assets/images/placeholder.jpg'}" alt="${productName}">
                     </div>
                     <div class="quick-view-info">
-                        <h2>${product.product_name}</h2>
+                        ${categoryName ? `<div class="quick-view-category">${categoryName}</div>` : ''}
+                        <h2>${productName}</h2>
                         <div class="quick-view-price">
                             ${product.sale_price ? `
                                 <span class="price-old">€${formatPrice(product.base_price)}</span>
@@ -588,15 +629,23 @@ function showQuickViewModal(product) {
                                 <span class="price-current">€${formatPrice(product.base_price)}</span>
                             `}
                         </div>
+                        ${product.stock_status !== undefined ? `
+                            <div class="quick-view-stock">
+                                <i class="fas fa-${product.in_stock ? 'check-circle' : 'times-circle'}"></i>
+                                <span class="${product.in_stock ? 'stock-available' : 'stock-unavailable'}">
+                                    ${product.in_stock ? inStockText : outOfStockText}
+                                </span>
+                            </div>
+                        ` : ''}
                         <div class="quick-view-description">
-                            ${product.description || ''}
+                            ${description}
                         </div>
                         <div class="quick-view-actions">
-                            <button class="btn btn-primary" onclick="if(window.cart) window.cart.addItem(${product.product_id})">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            <button class="btn btn-primary" ${!product.in_stock ? 'disabled' : ''} data-product-id="${product.product_id}">
+                                <i class="fas fa-shopping-cart"></i> ${addToCartText}
                             </button>
                             <a href="/product/${product.product_slug}" class="btn btn-outline">
-                                View Details
+                                ${viewDetailsText}
                             </a>
                         </div>
                     </div>
@@ -605,20 +654,60 @@ function showQuickViewModal(product) {
         </div>
     `;
     
+    // Insert modal at the end of body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
+    // Get the newly created modal
+    const modal = document.getElementById('quickViewModal');
+    const modalClose = modal.querySelector('.modal-close');
+    const modalOverlay = modal.querySelector('.modal-overlay');
+    const addToCartBtn = modal.querySelector('.btn-primary[data-product-id]');
+    
+    // Add event listeners
+    modalClose.addEventListener('click', closeQuickView);
+    modalOverlay.addEventListener('click', closeQuickView);
+    
+    // Add to cart from quick view
+    if (addToCartBtn && product.in_stock !== false) {
+        addToCartBtn.addEventListener('click', function() {
+            if (window.cart) {
+                window.cart.addItem(product.product_id);
+                closeQuickView();
+            }
+        });
+    }
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    // Add active class after a small delay for animation
     setTimeout(() => {
-        document.getElementById('quickViewModal').classList.add('active');
+        modal.classList.add('active');
     }, 10);
+    
+    // Close on escape key
+    document.addEventListener('keydown', handleEscapeKey);
 }
 
 function closeQuickView() {
     const modal = document.getElementById('quickViewModal');
     if (modal) {
         modal.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Remove escape key listener
+        document.removeEventListener('keydown', handleEscapeKey);
+        
+        // Remove modal after animation
         setTimeout(() => {
             modal.remove();
         }, 300);
+    }
+}
+
+function handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+        closeQuickView();
     }
 }
 
@@ -630,10 +719,22 @@ function formatPrice(price) {
 }
 
 function showNotification(message, type = 'info') {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
+    
+    const iconMap = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
         <span>${message}</span>
     `;
     
@@ -641,7 +742,7 @@ function showNotification(message, type = 'info') {
         position: fixed;
         top: 100px;
         right: 20px;
-        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : type === 'warning' ? '#f39c12' : '#3498db'};
         color: white;
         padding: 15px 20px;
         border-radius: 5px;
@@ -649,17 +750,20 @@ function showNotification(message, type = 'info') {
         display: flex;
         align-items: center;
         gap: 10px;
-        z-index: 9999;
+        z-index: 99999;
         transform: translateX(400px);
         transition: transform 0.3s ease;
+        max-width: 400px;
     `;
     
     document.body.appendChild(notification);
     
+    // Animate in
     setTimeout(() => {
         notification.style.transform = 'translateX(0)';
     }, 10);
     
+    // Auto remove after 3 seconds
     setTimeout(() => {
         notification.style.transform = 'translateX(400px)';
         setTimeout(() => {
