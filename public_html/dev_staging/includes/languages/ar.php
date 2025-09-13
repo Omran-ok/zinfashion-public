@@ -308,5 +308,59 @@ $lang = [
     'share_on' => 'شارك على',
     'copy_link' => 'نسخ الرابط',
     'link_copied' => 'تم نسخ الرابط',
+   
+    // Shop Page
+    'shop' => 'المتجر',
+    'all_products' => 'جميع المنتجات',
+    'all_categories' => 'جميع الفئات',
+    'categories' => 'الفئات',
+    'products_found' => 'منتج',
+    'shop_meta_description' => 'تصفح مجموعتنا من منتجات الأزياء الفاخرة في زين فاشن',
+
+    // Filters
+    'price_range' => 'نطاق السعر',
+    'min' => 'الحد الأدنى',
+    'max' => 'الحد الأقصى',
+    'filter' => 'تصفية',
+    'filters' => 'التصفيات',
+    'active_filters' => 'التصفيات النشطة',
+    'clear' => 'مسح',
+    'clear_all' => 'مسح الكل',
+    'special_offers' => 'العروض الخاصة',
+    'new_arrivals' => 'وصل حديثاً',
+    'on_sale' => 'تخفيضات',
+    'bestsellers' => 'الأكثر مبيعاً',
+
+    // Sorting
+    'sort_newest' => 'الأحدث',
+    'sort_price_low' => 'السعر: من الأقل إلى الأعلى',
+    'sort_price_high' => 'السعر: من الأعلى إلى الأقل',
+    'sort_name' => 'الاسم: أ-ي',
+    'sort_sale' => 'منتجات التخفيضات',
+    'sort_bestseller' => 'الأكثر مبيعاً',
+
+    // View Options
+    'grid_view' => 'عرض شبكي',
+    'list_view' => 'عرض قائمة',
+
+    // No Products
+    'no_products_found' => 'لم يتم العثور على منتجات',
+    'try_different_filters' => 'حاول تعديل التصفيات أو مصطلحات البحث',
+    'view_all_products' => 'عرض جميع المنتجات',
+
+    // Badges
+    'badge_new' => 'جديد',
+    'badge_sale' => 'تخفيض',
+    'badge_bestseller' => 'الأكثر مبيعاً',
+
+    // Actions
+    'add_to_cart' => 'أضف إلى السلة',
+    'add_to_wishlist' => 'أضف إلى قائمة الأمنيات',
+    'quick_view' => 'عرض سريع',
+
+    // Breadcrumb
+    'home' => 'الرئيسية',
+    'search' => 'بحث',
+    'price' => 'السعر',
 ];
 ?>
