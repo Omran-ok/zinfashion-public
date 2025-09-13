@@ -95,7 +95,7 @@ $lang = [
     'checkout' => 'Zur Kasse',
     // Cart specific translations
     'cart_updated' => 'Warenkorb aktualisiert',
-    'cart_empty_message' => 'Sieht so aus, als hätten Sie noch nichts in Ihren Warenkorb gelegt.',
+    'cart_empty' => 'Ihr Warenkorb ist leer',
     'start_shopping' => 'Jetzt einkaufen',
     'continue_shopping' => 'Weiter einkaufen',
     'proceed_to_checkout' => 'Zur Kasse gehen',
@@ -222,5 +222,59 @@ $lang = [
     'showing' => 'Zeige',
     'to' => 'bis',
     'results' => 'Ergebnisse',
+    
+    // Shop Page
+    'shop' => 'Shop',
+    'all_products' => 'Alle Produkte',
+    'all_categories' => 'Alle Kategorien',
+    'categories' => 'Kategorien',
+    'products_found' => 'Produkte gefunden',
+    'shop_meta_description' => 'Entdecken Sie unsere Kollektion hochwertiger Modeprodukte bei ZIN Fashion',
+
+    // Filters
+    'price_range' => 'Preisspanne',
+    'min' => 'Min',
+    'max' => 'Max',
+    'filter' => 'Filtern',
+    'filters' => 'Filter',
+    'active_filters' => 'Aktive Filter',
+    'clear' => 'Löschen',
+    'clear_all' => 'Alle löschen',
+    'special_offers' => 'Sonderangebote',
+    'new_arrivals' => 'Neuheiten',
+    'on_sale' => 'Im Angebot',
+    'bestsellers' => 'Bestseller',
+
+    // Sorting
+    'sort_newest' => 'Neueste',
+    'sort_price_low' => 'Preis: Niedrig bis Hoch',
+    'sort_price_high' => 'Preis: Hoch bis Niedrig',
+    'sort_name' => 'Name: A-Z',
+    'sort_sale' => 'Sale Artikel',
+    'sort_bestseller' => 'Bestseller',
+
+    // View Options
+    'grid_view' => 'Rasteransicht',
+    'list_view' => 'Listenansicht',
+
+    // No Products
+    'no_products_found' => 'Keine Produkte gefunden',
+    'try_different_filters' => 'Versuchen Sie, Ihre Filter oder Suchbegriffe anzupassen',
+    'view_all_products' => 'Alle Produkte anzeigen',
+
+    // Badges
+    'badge_new' => 'NEU',
+    'badge_sale' => 'SALE',
+    'badge_bestseller' => 'BESTSELLER',
+
+    // Actions
+    'add_to_cart' => 'In den Warenkorb',
+    'add_to_wishlist' => 'Zur Wunschliste',
+    'quick_view' => 'Schnellansicht',
+
+    // Breadcrumb
+    'home' => 'Startseite',
+    'search' => 'Suche',
+    'price' => 'Preis',
 ];
 ?>
