@@ -279,5 +279,59 @@ $lang = [
     'new_customer' => 'New customer?',
     'forgot_password' => 'Forgot your password?',
     'remember_me' => 'Remember me',
+    
+    // Shop Page
+    'shop' => 'Shop',
+    'all_products' => 'All Products',
+    'all_categories' => 'All Categories',
+    'categories' => 'Categories',
+    'products_found' => 'products found',
+    'shop_meta_description' => 'Browse our collection of premium fashion products at ZIN Fashion',
+
+    // Filters
+    'price_range' => 'Price Range',
+    'min' => 'Min',
+    'max' => 'Max',
+    'filter' => 'Filter',
+    'filters' => 'Filters',
+    'active_filters' => 'Active Filters',
+    'clear' => 'Clear',
+    'clear_all' => 'Clear All',
+    'special_offers' => 'Special Offers',
+    'new_arrivals' => 'New Arrivals',
+    'on_sale' => 'On Sale',
+    'bestsellers' => 'Bestsellers',
+
+    // Sorting
+    'sort_newest' => 'Newest',
+    'sort_price_low' => 'Price: Low to High',
+    'sort_price_high' => 'Price: High to Low',
+    'sort_name' => 'Name: A-Z',
+    'sort_sale' => 'Sale Items',
+    'sort_bestseller' => 'Bestsellers',
+
+    // View Options
+    'grid_view' => 'Grid View',
+    'list_view' => 'List View',
+
+    // No Products
+    'no_products_found' => 'No products found',
+    'try_different_filters' => 'Try adjusting your filters or search terms',
+    'view_all_products' => 'View All Products',
+
+    // Badges
+    'badge_new' => 'NEW',
+    'badge_sale' => 'SALE',
+    'badge_bestseller' => 'BESTSELLER',
+
+    // Actions
+    'add_to_cart' => 'Add to Cart',
+    'add_to_wishlist' => 'Add to Wishlist',
+    'quick_view' => 'Quick View',
+
+    // Breadcrumb
+    'home' => 'Home',
+    'search' => 'Search',
+    'price' => 'Price',
 ];
 ?>
