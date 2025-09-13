@@ -1,9 +1,10 @@
 <?php
 /**
- * ZIN Fashion - Shop Page
+ * ZIN Fashion - Shop Page (Production Ready)
  * Location: /public_html/dev_staging/shop.php
  * 
  * Main product catalog page with filtering, sorting, and pagination
+ * Fixed: Category display and product counts
  */
 
 session_start();
@@ -12,7 +13,7 @@ require_once 'includes/language-handler.php';
 
 $pdo = getDBConnection();
 
-// Get query parameters
+// Get query parameters with sanitization
 $categorySlug = isset($_GET['category']) ? sanitizeInput($_GET['category']) : null;
 $sort = isset($_GET['sort']) ? sanitizeInput($_GET['sort']) : 'newest';
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -24,7 +25,7 @@ $badge = isset($_GET['badge']) ? sanitizeInput($_GET['badge']) : null;
 $limit = 12; // Products per page
 $offset = ($page - 1) * $limit;
 
-// Build the query
+// Build the main query
 $sql = "SELECT DISTINCT p.*, 
         pi.image_url,
         c.category_name, c.category_name_en, c.category_name_ar, c.slug as category_slug,
@@ -36,7 +37,7 @@ $sql = "SELECT DISTINCT p.*,
 
 $params = [];
 
-// Category filter
+// Category filter - handle both direct category and parent category
 if ($categorySlug) {
     $sql .= " AND (c.slug = :category OR c.parent_id IN (SELECT category_id FROM categories WHERE slug = :category_parent))";
     $params['category'] = $categorySlug;
@@ -69,14 +70,39 @@ if ($badge) {
     $params['badge'] = $badge;
 }
 
-// Count total products
-$countSql = str_replace('SELECT DISTINCT p.*, pi.image_url, c.category_name, c.category_name_en, c.category_name_ar, c.slug as category_slug, COALESCE(p.sale_price, p.base_price) as final_price', 'SELECT COUNT(DISTINCT p.product_id)', $sql);
+// Count total products with same filters
+$countSql = "SELECT COUNT(DISTINCT p.product_id) 
+             FROM products p
+             LEFT JOIN categories c ON p.category_id = c.category_id
+             WHERE p.is_active = 1";
+
+// Apply same filters to count query
+if ($categorySlug) {
+    $countSql .= " AND (c.slug = :category OR c.parent_id IN (SELECT category_id FROM categories WHERE slug = :category_parent))";
+}
+if ($search) {
+    $countSql .= " AND (p.product_name LIKE :search OR p.product_name_en LIKE :search_en OR p.product_name_ar LIKE :search_ar OR p.description LIKE :search_desc)";
+}
+if ($minPrice !== null) {
+    $countSql .= " AND COALESCE(p.sale_price, p.base_price) >= :min_price";
+}
+if ($maxPrice !== null) {
+    $countSql .= " AND COALESCE(p.sale_price, p.base_price) <= :max_price";
+}
+if ($badge) {
+    $countSql .= " AND p.badge = :badge";
+}
+
+// Execute count query
 $countStmt = $pdo->prepare($countSql);
-$countStmt->execute($params);
+foreach ($params as $key => $value) {
+    $countStmt->bindValue($key, $value);
+}
+$countStmt->execute();
 $totalProducts = $countStmt->fetchColumn();
 $totalPages = ceil($totalProducts / $limit);
 
-// Add sorting
+// Add sorting to main query
 switch ($sort) {
     case 'price_low':
         $sql .= " ORDER BY final_price ASC";
@@ -100,7 +126,7 @@ switch ($sort) {
 // Add pagination
 $sql .= " LIMIT :limit OFFSET :offset";
 
-// Execute query
+// Execute main query
 $stmt = $pdo->prepare($sql);
 foreach ($params as $key => $value) {
     $stmt->bindValue($key, $value);
@@ -110,32 +136,45 @@ $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $products = $stmt->fetchAll();
 
-// Get categories for sidebar
-$catSql = "SELECT c.*, COUNT(p.product_id) as product_count
-           FROM categories c
-           LEFT JOIN products p ON c.category_id = p.category_id AND p.is_active = 1
-           WHERE c.is_active = 1
-           GROUP BY c.category_id
-           HAVING product_count > 0
-           ORDER BY c.parent_id, c.display_order";
+// Get ALL categories with proper product counts
+$catSql = "SELECT 
+    c.*,
+    (SELECT COUNT(DISTINCT p.product_id) 
+     FROM products p 
+     WHERE p.category_id = c.category_id 
+     AND p.is_active = 1) as direct_product_count,
+    (SELECT COUNT(DISTINCT p.product_id) 
+     FROM products p 
+     JOIN categories sub ON p.category_id = sub.category_id
+     WHERE (sub.category_id = c.category_id OR sub.parent_id = c.category_id)
+     AND p.is_active = 1) as total_product_count
+    FROM categories c
+    WHERE c.is_active = 1
+    ORDER BY c.parent_id, c.display_order, c.category_name";
+
 $catStmt = $pdo->query($catSql);
 $categories = $catStmt->fetchAll();
 
 // Get current category info if filtered
 $currentCategory = null;
 if ($categorySlug) {
-    $catInfoSql = "SELECT * FROM categories WHERE slug = :slug";
+    $catInfoSql = "SELECT * FROM categories WHERE slug = :slug AND is_active = 1";
     $catInfoStmt = $pdo->prepare($catInfoSql);
     $catInfoStmt->execute(['slug' => $categorySlug]);
     $currentCategory = $catInfoStmt->fetch();
 }
 
 // Get price range for filters
-$priceSql = "SELECT MIN(COALESCE(sale_price, base_price)) as min_price, 
-                    MAX(COALESCE(sale_price, base_price)) as max_price 
-             FROM products WHERE is_active = 1";
+$priceSql = "SELECT 
+    FLOOR(MIN(COALESCE(sale_price, base_price))) as min_price, 
+    CEIL(MAX(COALESCE(sale_price, base_price))) as max_price 
+    FROM products WHERE is_active = 1";
 $priceStmt = $pdo->query($priceSql);
 $priceRange = $priceStmt->fetch();
+
+// Get total products count for "All Categories"
+$allProductsSql = "SELECT COUNT(*) FROM products WHERE is_active = 1";
+$allProductsCount = $pdo->query($allProductsSql)->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLang ?>" dir="<?= $currentLang === 'ar' ? 'rtl' : 'ltr' ?>">
@@ -143,7 +182,7 @@ $priceRange = $priceStmt->fetch();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $currentCategory ? htmlspecialchars($currentCategory['category_name']) . ' - ' : '' ?><?= $lang['shop'] ?? 'Shop' ?> - ZIN Fashion</title>
-    <meta name="description" content="<?= $lang['shop_meta_description'] ?? 'Browse our collection of premium fashion products' ?>">
+    <meta name="description" content="<?= $lang['shop_meta_description'] ?? 'Browse our collection of premium fashion products at ZIN Fashion' ?>">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.svg">
@@ -191,29 +230,43 @@ $priceRange = $priceStmt->fetch();
                         <h3 class="widget-title"><?= $lang['categories'] ?? 'Categories' ?></h3>
                         <ul class="category-list">
                             <li class="<?= !$categorySlug ? 'active' : '' ?>">
-                                <a href="/shop"><?= $lang['all_categories'] ?? 'All Categories' ?> (<?= $totalProducts ?>)</a>
+                                <a href="/shop">
+                                    <?= $lang['all_categories'] ?? 'All Categories' ?> 
+                                    <span class="count">(<?= $allProductsCount ?>)</span>
+                                </a>
                             </li>
                             <?php 
-                            $mainCategories = array_filter($categories, function($cat) { return $cat['parent_id'] == null; });
+                            // Separate main and sub categories
+                            $mainCategories = array_filter($categories, function($cat) { 
+                                return $cat['parent_id'] == null; 
+                            });
+                            
                             foreach ($mainCategories as $mainCat): 
                                 $catName = $mainCat['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $mainCat['category_name'];
                                 $isActive = $categorySlug === $mainCat['slug'];
+                                $productCount = $mainCat['total_product_count'] ?? 0;
+                                
+                                // Get subcategories for this main category
                                 $subCategories = array_filter($categories, function($cat) use ($mainCat) { 
                                     return $cat['parent_id'] == $mainCat['category_id']; 
                                 });
                             ?>
                             <li class="<?= $isActive ? 'active' : '' ?>">
                                 <a href="/shop?category=<?= htmlspecialchars($mainCat['slug']) ?>">
-                                    <?= htmlspecialchars($catName) ?> (<?= $mainCat['product_count'] ?>)
+                                    <?= htmlspecialchars($catName) ?> 
+                                    <span class="count">(<?= $productCount ?>)</span>
                                 </a>
-                                <?php if (count($subCategories) > 0): ?>
+                                <?php if (!empty($subCategories)): ?>
                                 <ul class="subcategory-list">
                                     <?php foreach ($subCategories as $subCat): 
                                         $subCatName = $subCat['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $subCat['category_name'];
+                                        $subProductCount = $subCat['direct_product_count'] ?? 0;
+                                        $isSubActive = $categorySlug === $subCat['slug'];
                                     ?>
-                                    <li class="<?= $categorySlug === $subCat['slug'] ? 'active' : '' ?>">
+                                    <li class="<?= $isSubActive ? 'active' : '' ?>">
                                         <a href="/shop?category=<?= htmlspecialchars($subCat['slug']) ?>">
-                                            <?= htmlspecialchars($subCatName) ?> (<?= $subCat['product_count'] ?>)
+                                            <?= htmlspecialchars($subCatName) ?> 
+                                            <span class="count">(<?= $subProductCount ?>)</span>
                                         </a>
                                     </li>
                                     <?php endforeach; ?>
@@ -228,12 +281,19 @@ $priceRange = $priceStmt->fetch();
                     <div class="sidebar-widget">
                         <h3 class="widget-title"><?= $lang['price_range'] ?? 'Price Range' ?></h3>
                         <div class="price-filter">
+                            <div class="price-range-info">
+                                <span>€<?= $priceRange['min_price'] ?? 0 ?> - €<?= $priceRange['max_price'] ?? 999 ?></span>
+                            </div>
                             <div class="price-inputs">
                                 <input type="number" id="minPrice" placeholder="<?= $lang['min'] ?? 'Min' ?>" 
-                                       value="<?= $minPrice ?>" min="<?= $priceRange['min_price'] ?>" max="<?= $priceRange['max_price'] ?>">
+                                       value="<?= $minPrice ?>" 
+                                       min="<?= $priceRange['min_price'] ?? 0 ?>" 
+                                       max="<?= $priceRange['max_price'] ?? 999 ?>">
                                 <span>-</span>
                                 <input type="number" id="maxPrice" placeholder="<?= $lang['max'] ?? 'Max' ?>" 
-                                       value="<?= $maxPrice ?>" min="<?= $priceRange['min_price'] ?>" max="<?= $priceRange['max_price'] ?>">
+                                       value="<?= $maxPrice ?>" 
+                                       min="<?= $priceRange['min_price'] ?? 0 ?>" 
+                                       max="<?= $priceRange['max_price'] ?? 999 ?>">
                             </div>
                             <button class="btn btn-filter" onclick="applyPriceFilter()">
                                 <?= $lang['filter'] ?? 'Filter' ?>
@@ -245,21 +305,24 @@ $priceRange = $priceStmt->fetch();
                     <div class="sidebar-widget">
                         <h3 class="widget-title"><?= $lang['special_offers'] ?? 'Special Offers' ?></h3>
                         <div class="badge-filters">
-                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'new'])) ?>" 
+                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'new', 'page' => 1])) ?>" 
                                class="badge-filter <?= $badge === 'new' ? 'active' : '' ?>">
-                                <span class="badge-icon">🆕</span> <?= $lang['new_arrivals'] ?? 'New Arrivals' ?>
+                                <span class="badge-icon">🆕</span> 
+                                <?= $lang['new_arrivals'] ?? 'New Arrivals' ?>
                             </a>
-                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'sale'])) ?>" 
+                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'sale', 'page' => 1])) ?>" 
                                class="badge-filter <?= $badge === 'sale' ? 'active' : '' ?>">
-                                <span class="badge-icon">🏷️</span> <?= $lang['on_sale'] ?? 'On Sale' ?>
+                                <span class="badge-icon">🏷️</span> 
+                                <?= $lang['on_sale'] ?? 'On Sale' ?>
                             </a>
-                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'bestseller'])) ?>" 
+                            <a href="?<?= http_build_query(array_merge($_GET, ['badge' => 'bestseller', 'page' => 1])) ?>" 
                                class="badge-filter <?= $badge === 'bestseller' ? 'active' : '' ?>">
-                                <span class="badge-icon">🔥</span> <?= $lang['bestsellers'] ?? 'Bestsellers' ?>
+                                <span class="badge-icon">🔥</span> 
+                                <?= $lang['bestsellers'] ?? 'Bestsellers' ?>
                             </a>
                             <?php if ($badge): ?>
                             <a href="?<?= http_build_query(array_diff_key($_GET, ['badge' => ''])) ?>" class="clear-filter">
-                                <?= $lang['clear'] ?? 'Clear' ?>
+                                <i class="fas fa-times"></i> <?= $lang['clear'] ?? 'Clear' ?>
                             </a>
                             <?php endif; ?>
                         </div>
@@ -333,18 +396,32 @@ $priceRange = $priceStmt->fetch();
                     <?php endif; ?>
                     
                     <!-- Products Grid -->
-                    <?php if (count($products) > 0): ?>
+                    <?php if (!empty($products)): ?>
                     <div class="products-grid view-grid" id="productsContainer">
                         <?php foreach ($products as $product): 
-                            $productName = $product['product_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $product['product_name'];
-                            $categoryName = $product['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $product['category_name'];
+                            // Get translated product name with proper fallback
+                            $productName = $product['product_name'];
+                            if ($currentLang === 'en' && !empty($product['product_name_en'])) {
+                                $productName = $product['product_name_en'];
+                            } elseif ($currentLang === 'ar' && !empty($product['product_name_ar'])) {
+                                $productName = $product['product_name_ar'];
+                            }
+                            
+                            // Get translated category name with proper fallback
+                            $categoryName = $product['category_name'] ?? '';
+                            if ($currentLang === 'en' && !empty($product['category_name_en'])) {
+                                $categoryName = $product['category_name_en'];
+                            } elseif ($currentLang === 'ar' && !empty($product['category_name_ar'])) {
+                                $categoryName = $product['category_name_ar'];
+                            }
+                            
                             $price = $product['sale_price'] ?: $product['base_price'];
                             $originalPrice = $product['sale_price'] ? $product['base_price'] : null;
                             $discountPercent = $originalPrice ? round((($originalPrice - $price) / $originalPrice) * 100) : 0;
                         ?>
                         <div class="product-card">
-                            <?php if ($product['badge']): ?>
-                            <span class="product-badge badge-<?= $product['badge'] ?>">
+                            <?php if (!empty($product['badge'])): ?>
+                            <span class="product-badge badge-<?= htmlspecialchars($product['badge']) ?>">
                                 <?php if ($product['badge'] === 'sale' && $discountPercent > 0): ?>
                                     -<?= $discountPercent ?>%
                                 <?php else: ?>
@@ -359,12 +436,10 @@ $priceRange = $priceStmt->fetch();
                                          alt="<?= htmlspecialchars($productName) ?>" loading="lazy">
                                 </a>
                                 <div class="product-actions">
-                                    <button class="btn-icon add-to-wishlist" data-product-id="<?= $product['product_id'] ?>" 
-                                            title="<?= $lang['add_to_wishlist'] ?? 'Add to Wishlist' ?>">
+                                    <button class="btn-icon add-to-wishlist" data-product-id="<?= $product['product_id'] ?>">
                                         <i class="far fa-heart"></i>
                                     </button>
-                                    <button class="btn-icon quick-view" data-product-id="<?= $product['product_id'] ?>"
-                                            title="<?= $lang['quick_view'] ?? 'Quick View' ?>">
+                                    <button class="btn-icon quick-view" data-product-id="<?= $product['product_id'] ?>">
                                         <i class="far fa-eye"></i>
                                     </button>
                                 </div>
@@ -383,7 +458,7 @@ $priceRange = $priceStmt->fetch();
                                     <?php endif; ?>
                                     <span class="price-current">€<?= number_format($price, 2, ',', '.') ?></span>
                                 </div>
-                                <button class="btn btn-add-to-cart" data-product-id="<?= $product['product_id'] ?>">
+                                <button class="btn btn-add-to-cart" data-product-id="<?= $product['product_id'] ?>" type="button">
                                     <i class="fas fa-shopping-cart"></i> <?= $lang['add_to_cart'] ?? 'Add to Cart' ?>
                                 </button>
                             </div>
