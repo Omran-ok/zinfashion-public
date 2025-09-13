@@ -1,6 +1,7 @@
 /**
- * ZIN Fashion - Shop Page Styles
+ * ZIN Fashion - Shop Page Styles (Production Ready)
  * Location: /public_html/dev_staging/assets/css/shop.css
+ * Updated: Removed product card styles to use main.css
  */
 
 /* ========================================
@@ -59,6 +60,21 @@
     top: 100px;
     max-height: calc(100vh - 120px);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-primary) var(--bg-secondary);
+}
+
+.shop-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shop-sidebar::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.shop-sidebar::-webkit-scrollbar-thumb {
+    background: var(--gold-primary);
+    border-radius: 3px;
 }
 
 .sidebar-widget {
@@ -66,6 +82,7 @@
     border: 1px solid var(--border-color);
     padding: 25px;
     margin-bottom: 30px;
+    border-radius: 8px;
 }
 
 .widget-title {
@@ -80,6 +97,8 @@
 /* Category List */
 .category-list {
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .category-list li {
@@ -90,9 +109,11 @@
     color: var(--text-secondary);
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 8px 12px;
     transition: all 0.3s ease;
     border-left: 3px solid transparent;
+    position: relative;
 }
 
 .category-list a:hover {
@@ -108,10 +129,12 @@
     font-weight: 500;
 }
 
+/* Subcategory List */
 .subcategory-list {
     list-style: none;
     margin-top: 10px;
     margin-left: 20px;
+    padding: 0;
 }
 
 .subcategory-list li {
@@ -143,6 +166,7 @@
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 14px;
+    border-radius: 4px;
 }
 
 .price-inputs input:focus {
@@ -163,10 +187,12 @@
     text-transform: uppercase;
     font-weight: 500;
     transition: all 0.3s ease;
+    border-radius: 4px;
 }
 
 .btn-filter:hover {
     background: var(--gold-secondary);
+    transform: translateY(-2px);
 }
 
 /* Badge Filters */
@@ -185,11 +211,14 @@
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     transition: all 0.3s ease;
+    border-radius: 4px;
+    text-decoration: none;
 }
 
 .badge-filter:hover {
     border-color: var(--gold-primary);
     color: var(--gold-primary);
+    transform: translateX(5px);
 }
 
 .badge-filter.active {
@@ -207,6 +236,12 @@
     color: var(--text-muted);
     font-size: 14px;
     text-decoration: underline;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+.clear-filter:hover {
+    color: var(--gold-primary);
 }
 
 /* ========================================
@@ -228,6 +263,7 @@
 .shop-title h1 {
     font-size: 32px;
     margin-bottom: 5px;
+    color: var(--text-primary);
 }
 
 .product-count {
@@ -258,6 +294,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.3s ease;
+    border-radius: 4px;
 }
 
 .view-btn:hover {
@@ -280,6 +317,7 @@
     font-size: 14px;
     cursor: pointer;
     min-width: 200px;
+    border-radius: 4px;
 }
 
 .sort-control select:focus {
@@ -297,6 +335,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     flex-wrap: wrap;
+    border-radius: 4px;
 }
 
 .active-filters > span:first-child {
@@ -314,6 +353,7 @@
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 13px;
+    border-radius: 20px;
 }
 
 .remove-filter {
@@ -322,6 +362,7 @@
     line-height: 1;
     cursor: pointer;
     transition: color 0.3s ease;
+    text-decoration: none;
 }
 
 .remove-filter:hover {
@@ -335,8 +376,12 @@
     text-decoration: underline;
 }
 
+.clear-all:hover {
+    color: var(--gold-secondary);
+}
+
 /* ========================================
-   Products Grid
+   Products Grid - Use main.css styles
    ======================================== */
 .products-grid {
     display: grid;
@@ -345,7 +390,7 @@
     margin-bottom: 50px;
 }
 
-/* List View */
+/* List View - Additional styles for list layout only */
 .products-grid.view-list {
     grid-template-columns: 1fr;
 }
@@ -374,6 +419,7 @@
 .products-grid.view-list .btn-add-to-cart {
     width: auto;
     align-self: flex-start;
+    padding: 10px 30px;
 }
 
 /* ========================================
@@ -398,6 +444,8 @@
     color: var(--text-primary);
     font-size: 14px;
     transition: all 0.3s ease;
+    text-decoration: none;
+    border-radius: 4px;
 }
 
 .page-link:hover {
@@ -447,6 +495,22 @@
     margin-bottom: 30px;
 }
 
+.no-products .btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: var(--gold-primary);
+    color: #000;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.no-products .btn:hover {
+    background: var(--gold-secondary);
+    transform: translateY(-2px);
+}
+
 /* ========================================
    Mobile Sidebar Toggle
    ======================================== */
@@ -465,6 +529,10 @@
     cursor: pointer;
     z-index: 100;
     box-shadow: var(--shadow-lg);
+}
+
+.sidebar-close {
+    display: none;
 }
 
 /* ========================================
@@ -508,6 +576,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+    
+    .sidebar-close {
+        display: block !important;
     }
     
     .sidebar-overlay {
@@ -568,5 +640,9 @@
     .filter-tag {
         font-size: 12px;
         padding: 4px 8px;
+    }
+    
+    .sidebar-widget {
+        padding: 15px;
     }
 }
