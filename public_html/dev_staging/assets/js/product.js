@@ -1,148 +1,211 @@
 /**
  * ZIN Fashion - Product Page JavaScript
  * Location: /public_html/dev_staging/assets/js/product.js
- * Handles product interactions, variant selection, and tabs
+ * Version: Complete fresh version with all fixes
  */
 
+// ========================================
+// Product Page Initialization
+// ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // ========================================
-    // Gallery Functionality
-    // ========================================
+    initializeGallery();
+    initializeVariantSelection();
+    initializeQuantitySelector();
+    initializeProductTabs();
+    initializeProductForm();
+    initializeSizeGuide();
+    initializeShareButtons();
+    initializeWishlistButton();
+});
+
+// ========================================
+// Gallery Management
+// ========================================
+function initializeGallery() {
     const mainImage = document.getElementById('mainImage');
-    const thumbnails = document.querySelectorAll('.thumb-item');
+    const thumbItems = document.querySelectorAll('.thumb-item');
     const zoomBtn = document.getElementById('zoomBtn');
+    const mainImageContainer = document.querySelector('.main-image-container');
     
-    // Thumbnail click handler
-    thumbnails.forEach(thumb => {
+    if (!mainImage) return;
+    
+    // Thumbnail clicks
+    thumbItems.forEach(thumb => {
         thumb.addEventListener('click', function() {
             const imageUrl = this.dataset.image;
-            if (imageUrl && mainImage) {
+            if (imageUrl) {
                 mainImage.src = imageUrl;
                 
                 // Update active state
-                thumbnails.forEach(t => t.classList.remove('active'));
+                thumbItems.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
             }
         });
     });
     
-    // Zoom functionality
-    if (zoomBtn && mainImage) {
-        zoomBtn.addEventListener('click', function() {
-            // Create zoom modal
-            const modal = document.createElement('div');
-            modal.className = 'image-zoom-modal';
-            modal.innerHTML = `
-                <div class="zoom-modal-content">
-                    <img src="${mainImage.src}" alt="Zoomed image">
-                    <button class="zoom-close">&times;</button>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            document.body.style.overflow = 'hidden';
-            
-            // Close modal
-            modal.querySelector('.zoom-close').addEventListener('click', function() {
-                document.body.removeChild(modal);
-                document.body.style.overflow = '';
-            });
-            
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                    document.body.style.overflow = '';
-                }
-            });
+    // Zoom functionality - both button and image click
+    if (zoomBtn) {
+        zoomBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openImageZoom(mainImage.src);
         });
     }
     
-    // ========================================
-    // Variant Selection
-    // ========================================
-    const productForm = document.getElementById('productForm');
-    const sizeInputs = document.querySelectorAll('input[name="size"]');
-    const colorInputs = document.querySelectorAll('input[name="color"]');
-    const variantIdInput = document.getElementById('variantId');
-    const currentPriceElement = document.getElementById('currentPrice');
-    const stockCountElement = document.getElementById('stockCount');
-    
-    function updateVariant() {
-        if (!window.productData) return;
-        
-        const selectedSize = document.querySelector('input[name="size"]:checked')?.value;
-        const selectedColor = document.querySelector('input[name="color"]:checked')?.value || '0';
-        
-        if (!selectedSize) {
-            if (stockCountElement) {
-                stockCountElement.textContent = '';
+    // Click on main image to zoom
+    if (mainImageContainer) {
+        mainImageContainer.style.cursor = 'zoom-in';
+        mainImageContainer.addEventListener('click', function(e) {
+            // Don't trigger if clicking the zoom button
+            if (!e.target.closest('.zoom-btn')) {
+                openImageZoom(mainImage.src);
             }
-            return;
+        });
+    }
+}
+
+function openImageZoom(imageSrc) {
+    // Remove existing modal if present
+    const existingModal = document.getElementById('imageZoomModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'imageZoomModal';
+    modal.className = 'image-zoom-modal';
+    modal.innerHTML = `
+        <div class="zoom-modal-content">
+            <button class="zoom-close" onclick="closeImageZoom()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img src="${imageSrc}" alt="Zoomed image">
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Close on click outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeImageZoom();
         }
-        
-        const variantKey = `${selectedSize}-${selectedColor}`;
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', handleEscapeKey);
+}
+
+window.closeImageZoom = function() {
+    const modal = document.getElementById('imageZoomModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleEscapeKey);
+    }
+};
+
+function handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+        closeImageZoom();
+    }
+}
+
+// ========================================
+// Variant Selection
+// ========================================
+function initializeVariantSelection() {
+    const sizeOptions = document.querySelectorAll('input[name="size"]');
+    const colorOptions = document.querySelectorAll('input[name="color"]');
+    
+    sizeOptions.forEach(option => {
+        option.addEventListener('change', updateVariant);
+    });
+    
+    colorOptions.forEach(option => {
+        option.addEventListener('change', updateVariant);
+    });
+}
+
+function updateVariant() {
+    const selectedSize = document.querySelector('input[name="size"]:checked');
+    const selectedColor = document.querySelector('input[name="color"]:checked');
+    
+    if (!selectedSize) return;
+    
+    const sizeId = selectedSize.value;
+    const colorId = selectedColor ? selectedColor.value : '0';
+    const variantKey = `${sizeId}-${colorId}`;
+    
+    if (window.productData && window.productData.variantMap) {
         const variant = window.productData.variantMap[variantKey];
         
         if (variant) {
             // Update variant ID
+            const variantIdInput = document.getElementById('variantId');
             if (variantIdInput) {
                 variantIdInput.value = variant.variant_id;
             }
             
+            // Update stock status
+            updateStockStatus(variant.stock);
+            
             // Update price if there's adjustment
-            if (variant.price_adjustment && variant.price_adjustment != 0) {
-                const newPrice = window.productData.basePrice + parseFloat(variant.price_adjustment);
-                if (currentPriceElement) {
-                    currentPriceElement.textContent = '€' + newPrice.toFixed(2).replace('.', ',');
-                }
-            }
-            
-            // Update stock display
-            if (stockCountElement) {
-                const stock = parseInt(variant.stock);
-                if (stock > 0 && stock <= 5) {
-                    stockCountElement.textContent = window.productData.translations.onlyLeft.replace('{count}', stock);
-                    stockCountElement.style.color = '#e74c3c';
-                } else if (stock > 5) {
-                    stockCountElement.textContent = `(${stock} available)`;
-                    stockCountElement.style.color = 'var(--text-muted)';
-                } else {
-                    stockCountElement.textContent = window.productData.translations.outOfStock;
-                    stockCountElement.style.color = '#e74c3c';
-                }
-            }
-            
-            // Update add to cart button
-            const addToCartBtn = productForm.querySelector('button[type="submit"]');
-            if (addToCartBtn) {
-                if (variant.stock > 0) {
-                    addToCartBtn.disabled = false;
-                    addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> ' + (window.cartTranslations?.add_to_cart || 'Add to Cart');
-                } else {
-                    addToCartBtn.disabled = true;
-                    addToCartBtn.innerHTML = '<i class="fas fa-times-circle"></i> ' + (window.productData.translations.outOfStock || 'Out of Stock');
-                }
+            if (variant.price_adjustment && variant.price_adjustment !== 0) {
+                updatePrice(window.productData.basePrice + parseFloat(variant.price_adjustment));
             }
         }
     }
+}
+
+function updateStockStatus(stock) {
+    const stockInfo = document.querySelector('.stock-info');
+    const addToCartBtn = document.querySelector('.btn-detail-cart');
     
-    // Add event listeners for variant selection
-    sizeInputs.forEach(input => {
-        input.addEventListener('change', updateVariant);
-    });
+    if (!stockInfo) return;
     
-    colorInputs.forEach(input => {
-        input.addEventListener('change', updateVariant);
-    });
-    
-    // ========================================
-    // Quantity Selector
-    // ========================================
-    window.updateQuantity = function(change) {
-        const quantityInput = document.getElementById('quantity');
-        if (!quantityInput) return;
+    if (stock > 0) {
+        stockInfo.innerHTML = `
+            <span class="in-stock">
+                <i class="fas fa-check-circle"></i> ${window.productData.translations.inStock}
+            </span>
+            ${stock <= 5 ? `<span class="stock-count">${window.productData.translations.onlyLeft.replace('{count}', stock)}</span>` : ''}
+        `;
         
+        if (addToCartBtn) {
+            addToCartBtn.disabled = false;
+            addToCartBtn.innerHTML = `<i class="fas fa-shopping-cart"></i> ${window.productData.translations.addToCart || 'Add to Cart'}`;
+        }
+    } else {
+        stockInfo.innerHTML = `
+            <span class="out-of-stock">
+                <i class="fas fa-times-circle"></i> ${window.productData.translations.outOfStock}
+            </span>
+        `;
+        
+        if (addToCartBtn) {
+            addToCartBtn.disabled = true;
+            addToCartBtn.innerHTML = `<i class="fas fa-times-circle"></i> ${window.productData.translations.outOfStock || 'Out of Stock'}`;
+        }
+    }
+}
+
+function updatePrice(newPrice) {
+    const priceElement = document.getElementById('currentPrice');
+    if (priceElement) {
+        priceElement.textContent = `€${newPrice.toFixed(2).replace('.', ',')}`;
+    }
+}
+
+// ========================================
+// Quantity Selector
+// ========================================
+function initializeQuantitySelector() {
+    const quantityInput = document.getElementById('quantity');
+    
+    if (!quantityInput) return;
+    
+    window.updateQuantity = function(change) {
         let currentValue = parseInt(quantityInput.value) || 1;
         let newValue = currentValue + change;
         
@@ -151,63 +214,197 @@ document.addEventListener('DOMContentLoaded', function() {
         
         quantityInput.value = newValue;
     };
+}
+
+// ========================================
+// Product Form Submission
+// ========================================
+function initializeProductForm() {
+    const productForm = document.getElementById('productForm');
     
-    // ========================================
-    // Product Form Submission
-    // ========================================
     if (productForm) {
-        productForm.addEventListener('submit', async function(e) {
+        productForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Validate selection
-            const selectedSize = document.querySelector('input[name="size"]:checked');
-            const hasColors = window.productData && window.productData.hasColors;
-            const selectedColor = document.querySelector('input[name="color"]:checked');
-            
-            if (!selectedSize) {
-                showNotification(window.productData?.translations.selectSize || 'Please select a size', 'error');
-                return;
-            }
-            
-            if (hasColors && !selectedColor) {
-                showNotification(window.productData?.translations.selectColor || 'Please select a color', 'error');
-                return;
-            }
-            
-            const formData = new FormData(this);
-            
-            try {
-                const response = await fetch('/api.php?api=cart', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update cart count
-                    updateCartCount(data.cart_count);
-                    
-                    // Show success message
-                    showNotification(window.cartTranslations?.item_added_cart || 'Item added to cart', 'success');
-                    
-                    // Refresh cart sidebar if open
-                    if (typeof loadCartSidebar === 'function') {
-                        loadCartSidebar();
-                    }
-                } else {
-                    showNotification(data.message || 'Failed to add to cart', 'error');
-                }
-            } catch (error) {
-                console.error('Error adding to cart:', error);
-                showNotification('An error occurred', 'error');
-            }
+            handleAddToCart();
         });
     }
+}
+
+function handleAddToCart() {
+    const productId = window.productData ? window.productData.productId : null;
+    const variantId = document.getElementById('variantId')?.value;
+    const quantity = document.getElementById('quantity')?.value || 1;
+    const selectedSize = document.querySelector('input[name="size"]:checked');
+    const selectedColor = document.querySelector('input[name="color"]:checked');
     
-    // ========================================
-    // Tabs Functionality
-    // ========================================
+    // Validation
+    if (!productId) {
+        showNotification('Product information missing', 'error');
+        return;
+    }
+    
+    if (!selectedSize) {
+        showNotification(window.productData?.translations?.selectSize || 'Please select a size', 'warning');
+        // Highlight size selection
+        document.querySelector('.size-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    
+    if (window.productData?.hasColors === 'true' && !selectedColor) {
+        showNotification(window.productData?.translations?.selectColor || 'Please select a color', 'warning');
+        // Highlight color selection
+        document.querySelector('.color-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    
+    if (!variantId) {
+        showNotification('Please select product options', 'warning');
+        return;
+    }
+    
+    // Prepare data for cart API
+    const cartData = {
+        product_id: productId,
+        variant_id: variantId,
+        quantity: quantity
+    };
+    
+    // Add to cart via API
+    fetch('/api.php?action=cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cartData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Added to cart successfully!', 'success');
+            
+            // Update cart count in header
+            updateCartCount(data.cart_count);
+            
+            // Open cart sidebar if available
+            if (window.cart && window.cart.openCartSidebar) {
+                setTimeout(() => {
+                    window.cart.openCartSidebar();
+                }, 500);
+            }
+        } else {
+            showNotification(data.message || 'Failed to add to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to cart:', error);
+        showNotification('Failed to add to cart. Please try again.', 'error');
+    });
+}
+
+function updateCartCount(count) {
+    const cartCount = document.getElementById('cartCount');
+    if (cartCount) {
+        if (count > 0) {
+            cartCount.textContent = count;
+            cartCount.style.display = 'flex';
+        } else {
+            cartCount.style.display = 'none';
+        }
+    }
+}
+
+// ========================================
+// Wishlist Functionality
+// ========================================
+function initializeWishlistButton() {
+    const wishlistBtn = document.querySelector('.btn-detail-wishlist');
+    
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleWishlist(this);
+        });
+    }
+}
+
+function handleWishlist(button) {
+    const productId = button.dataset.productId;
+    
+    if (!productId) return;
+    
+    const icon = button.querySelector('i');
+    const isActive = icon.classList.contains('fas');
+    
+    if (isActive) {
+        removeFromWishlist(productId, button);
+    } else {
+        addToWishlist(productId, button);
+    }
+}
+
+function addToWishlist(productId, button) {
+    fetch('/api.php?action=wishlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            product_id: productId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Added to wishlist!', 'success');
+            const icon = button.querySelector('i');
+            if (icon) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            }
+            button.style.background = 'var(--gold-primary)';
+            button.style.color = '#000';
+        } else if (data.login_required) {
+            showNotification('Please login to add to wishlist', 'warning');
+            // Optionally redirect to login
+            setTimeout(() => {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Failed to add to wishlist', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to wishlist:', error);
+        showNotification('Failed to add to wishlist', 'error');
+    });
+}
+
+function removeFromWishlist(productId, button) {
+    fetch(`/api.php?action=wishlist&product_id=${productId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Removed from wishlist', 'info');
+            const icon = button.querySelector('i');
+            if (icon) {
+                icon.classList.add('far');
+                icon.classList.remove('fas');
+            }
+            button.style.background = 'transparent';
+            button.style.color = 'var(--gold-primary)';
+        }
+    })
+    .catch(error => {
+        console.error('Error removing from wishlist:', error);
+    });
+}
+
+// ========================================
+// Product Tabs
+// ========================================
+function initializeProductTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     
@@ -215,353 +412,249 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const targetTab = this.dataset.tab;
             
-            // Update button states
+            // Update active states
             tabButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+            tabPanes.forEach(pane => pane.classList.remove('active'));
             
-            // Update pane visibility
-            tabPanes.forEach(pane => {
-                if (pane.id === targetTab) {
-                    pane.classList.add('active');
-                } else {
-                    pane.classList.remove('active');
-                }
-            });
+            this.classList.add('active');
+            const targetPane = document.getElementById(targetTab);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
         });
     });
+}
+
+// ========================================
+// Size Guide
+// ========================================
+function initializeSizeGuide() {
+    const sizeGuideLink = document.querySelector('.size-guide-link');
     
-    // ========================================
-    // Size Guide Modal
-    // ========================================
-    window.showSizeGuide = function() {
-        const sizeGuideTab = document.getElementById('size-guide');
-        const sizeGuideBtn = document.querySelector('[data-tab="size-guide"]');
-        
-        if (sizeGuideTab && sizeGuideBtn) {
-            // Activate size guide tab
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            sizeGuideBtn.classList.add('active');
-            
-            tabPanes.forEach(pane => pane.classList.remove('active'));
-            sizeGuideTab.classList.add('active');
-            
-            // Scroll to tabs
-            document.querySelector('.product-tabs').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-            });
-        }
-    };
-    
-    // ========================================
-    // Review Form Modal
-    // ========================================
-    window.openReviewForm = function() {
-        // Create review form modal
-        const modal = document.createElement('div');
-        modal.className = 'review-modal';
-        modal.innerHTML = `
-            <div class="review-modal-content">
-                <div class="review-modal-header">
-                    <h3>Write a Review</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <form id="reviewForm" class="review-form">
-                    <input type="hidden" name="product_id" value="${window.productData?.productId}">
-                    
-                    <div class="form-group">
-                        <label>Rating</label>
-                        <div class="star-rating-input">
-                            ${[5,4,3,2,1].map(i => `
-                                <input type="radio" name="rating" value="${i}" id="star${i}" required>
-                                <label for="star${i}"><i class="fas fa-star"></i></label>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Review Title</label>
-                        <input type="text" name="review_title" placeholder="Summary of your experience" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Your Review</label>
-                        <textarea name="review_text" rows="5" placeholder="Tell us about your experience with this product" required></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-outline cancel-btn">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Submit Review</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        document.body.style.overflow = 'hidden';
-        
-        // Close modal handlers
-        modal.querySelector('.modal-close').addEventListener('click', closeModal);
-        modal.querySelector('.cancel-btn').addEventListener('click', closeModal);
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeModal();
-        });
-        
-        function closeModal() {
-            document.body.removeChild(modal);
-            document.body.style.overflow = '';
-        }
-        
-        // Handle review submission
-        modal.querySelector('#reviewForm').addEventListener('submit', async function(e) {
+    if (sizeGuideLink) {
+        sizeGuideLink.addEventListener('click', function(e) {
             e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            try {
-                const response = await fetch('/api.php?api=reviews', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showNotification('Review submitted successfully! It will appear after moderation.', 'success');
-                    closeModal();
-                } else {
-                    showNotification(data.message || 'Failed to submit review', 'error');
-                }
-            } catch (error) {
-                console.error('Error submitting review:', error);
-                showNotification('An error occurred', 'error');
-            }
-        });
-    };
-    
-    // ========================================
-    // Share Product
-    // ========================================
-    const shareBtn = document.querySelector('.share-product');
-    if (shareBtn) {
-        shareBtn.addEventListener('click', function() {
-            const url = window.location.href;
-            const title = document.querySelector('.product-title')?.textContent || 'Check out this product';
-            
-            // Check if Web Share API is available
-            if (navigator.share) {
-                navigator.share({
-                    title: title,
-                    url: url
-                }).catch(err => console.log('Error sharing:', err));
-            } else {
-                // Fallback: Copy to clipboard
-                navigator.clipboard.writeText(url).then(() => {
-                    showNotification('Product link copied to clipboard!', 'success');
-                }).catch(() => {
-                    showNotification('Failed to copy link', 'error');
-                });
-            }
+            showSizeGuide();
         });
     }
-    
-    // ========================================
-    // Helper Functions
-    // ========================================
-    function updateCartCount(count) {
-        const cartCountElements = document.querySelectorAll('#cartCount');
-        cartCountElements.forEach(el => {
-            el.textContent = count;
-            el.style.display = count > 0 ? 'flex' : 'none';
-        });
-    }
-    
-    function showNotification(message, type = 'info') {
-        // Use existing notification system if available
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, type);
-        } else {
-            // Fallback notification
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
-                color: white;
-                border-radius: 4px;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            document.body.appendChild(notification);
-            
+}
+
+window.showSizeGuide = function() {
+    const sizeGuideTab = document.querySelector('.tab-btn[data-tab="size-guide"]');
+    if (sizeGuideTab) {
+        // Click the size guide tab
+        sizeGuideTab.click();
+        
+        // Scroll to the tabs section
+        const tabsSection = document.querySelector('.product-tabs');
+        if (tabsSection) {
             setTimeout(() => {
-                notification.remove();
-            }, 3000);
+                tabsSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }, 100);
         }
     }
-});
+};
 
 // ========================================
-// Additional CSS for modals (inject dynamically)
+// Share Buttons (Already in product.php)
 // ========================================
-const modalStyles = `
-<style>
-.image-zoom-modal,
-.review-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-}
-
-.zoom-modal-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-}
-
-.zoom-modal-content img {
-    max-width: 100%;
-    max-height: 90vh;
-    object-fit: contain;
-}
-
-.zoom-close,
-.modal-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-}
-
-.zoom-close:hover,
-.modal-close:hover {
-    background: var(--gold-primary);
-    color: #000;
-}
-
-.review-modal-content {
-    background: var(--bg-card);
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.review-modal-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.review-modal-header h3 {
-    margin: 0;
-    color: var(--gold-primary);
-}
-
-.review-form {
-    padding: 20px;
-}
-
-.review-form .form-group {
-    margin-bottom: 20px;
-}
-
-.review-form label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.review-form input[type="text"],
-.review-form textarea {
-    width: 100%;
-    padding: 10px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    border-radius: 4px;
-}
-
-.star-rating-input {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-    gap: 5px;
-}
-
-.star-rating-input input {
-    display: none;
-}
-
-.star-rating-input label {
-    cursor: pointer;
-    font-size: 24px;
-    color: var(--text-muted);
-    transition: color 0.3s ease;
-}
-
-.star-rating-input input:checked ~ label,
-.star-rating-input label:hover,
-.star-rating-input label:hover ~ label {
-    color: var(--gold-primary);
-}
-
-.form-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
+function initializeShareButtons() {
+    // These functions are already defined in product.php inline script
+    // Just ensure they're available globally
+    if (!window.copyProductLink && window.productData) {
+        window.copyProductLink = function() {
+            navigator.clipboard.writeText(window.productData.productUrl).then(() => {
+                showNotification(window.productData.translations.linkCopied, 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const input = document.createElement('input');
+                input.value = window.productData.productUrl;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showNotification(window.productData.translations.linkCopied, 'success');
+            });
+        };
+        
+        window.shareInstagram = function() {
+            copyProductLink();
+            setTimeout(() => {
+                showNotification(window.productData.translations.shareInstagram, 'info');
+            }, 1500);
+        };
+        
+        window.shareTikTok = function() {
+            copyProductLink();
+            setTimeout(() => {
+                showNotification(window.productData.translations.shareTikTok, 'info');
+            }, 1500);
+        };
     }
 }
-</style>
-`;
 
-// Inject modal styles
-if (!document.querySelector('#productModalStyles')) {
-    const styleElement = document.createElement('div');
-    styleElement.id = 'productModalStyles';
-    styleElement.innerHTML = modalStyles;
-    document.head.appendChild(styleElement.firstElementChild);
+// ========================================
+// Notification System
+// ========================================
+function showNotification(message, type = 'info') {
+    // Check if main.js notification is available
+    if (window.showNotification && window.showNotification !== showNotification) {
+        window.showNotification(message, type);
+        return;
+    }
+    
+    // Otherwise use local implementation
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    const iconMap = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    
+    notification.innerHTML = `
+        <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : type === 'warning' ? '#f39c12' : '#3498db'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 99999;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+        max-width: 400px;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
 }
+
+// ========================================
+// Review Form
+// ========================================
+window.openReviewForm = function() {
+    // Check if user is logged in
+    if (!window.isLoggedIn) {
+        showNotification('Please login to write a review', 'info');
+        setTimeout(() => {
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        }, 1500);
+        return;
+    }
+    
+    // Create review modal
+    const modal = document.createElement('div');
+    modal.className = 'review-modal';
+    modal.innerHTML = `
+        <div class="review-modal-content">
+            <div class="review-modal-header">
+                <h3>Write a Review</h3>
+                <button class="modal-close" onclick="closeReviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="review-form" id="reviewForm">
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="star-rating-input">
+                        <input type="radio" name="rating" value="5" id="star5" required>
+                        <label for="star5"><i class="fas fa-star"></i></label>
+                        <input type="radio" name="rating" value="4" id="star4">
+                        <label for="star4"><i class="fas fa-star"></i></label>
+                        <input type="radio" name="rating" value="3" id="star3">
+                        <label for="star3"><i class="fas fa-star"></i></label>
+                        <input type="radio" name="rating" value="2" id="star2">
+                        <label for="star2"><i class="fas fa-star"></i></label>
+                        <input type="radio" name="rating" value="1" id="star1">
+                        <label for="star1"><i class="fas fa-star"></i></label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reviewTitle">Title</label>
+                    <input type="text" id="reviewTitle" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="reviewText">Your Review</label>
+                    <textarea id="reviewText" name="review" rows="4" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeReviewModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Handle form submission
+    document.getElementById('reviewForm').addEventListener('submit', submitReview);
+};
+
+window.closeReviewModal = function() {
+    const modal = document.querySelector('.review-modal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+};
+
+function submitReview(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    formData.append('product_id', window.productData.productId);
+    
+    fetch('/api.php?action=review', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Review submitted successfully! It will appear after moderation.', 'success');
+            closeReviewModal();
+        } else {
+            showNotification(data.message || 'Failed to submit review', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting review:', error);
+        showNotification('Failed to submit review', 'error');
+    });
+}
+
+// Make functions globally available
+window.showNotification = showNotification;
+window.handleAddToCart = handleAddToCart;
+window.handleWishlist = handleWishlist;
