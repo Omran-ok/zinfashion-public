@@ -1,7 +1,7 @@
 /**
  * ZIN Fashion - Product Page JavaScript
  * Location: /public_html/dev_staging/assets/js/product.js
- * Version: Complete fresh version with all fixes
+ * Version: Fixed cart integration
  */
 
 // ========================================
@@ -125,6 +125,12 @@ function initializeVariantSelection() {
     colorOptions.forEach(option => {
         option.addEventListener('change', updateVariant);
     });
+    
+    // Trigger initial variant selection
+    const checkedSize = document.querySelector('input[name="size"]:checked');
+    if (checkedSize) {
+        updateVariant();
+    }
 }
 
 function updateVariant() {
@@ -174,7 +180,10 @@ function updateStockStatus(stock) {
         
         if (addToCartBtn) {
             addToCartBtn.disabled = false;
-            addToCartBtn.innerHTML = `<i class="fas fa-shopping-cart"></i> ${window.productData.translations.addToCart || 'Add to Cart'}`;
+            const btnText = document.getElementById('addToCartText');
+            if (btnText) {
+                btnText.textContent = window.productData.translations.addToCart || 'Add to Cart';
+            }
         }
     } else {
         stockInfo.innerHTML = `
@@ -185,7 +194,10 @@ function updateStockStatus(stock) {
         
         if (addToCartBtn) {
             addToCartBtn.disabled = true;
-            addToCartBtn.innerHTML = `<i class="fas fa-times-circle"></i> ${window.productData.translations.outOfStock || 'Out of Stock'}`;
+            const btnText = document.getElementById('addToCartText');
+            if (btnText) {
+                btnText.textContent = window.productData.translations.outOfStock || 'Out of Stock';
+            }
         }
     }
 }
@@ -231,84 +243,141 @@ function initializeProductForm() {
 }
 
 function handleAddToCart() {
-    const productId = window.productData ? window.productData.productId : null;
+    // Get form values first
+    const productId = document.getElementById('productId')?.value || window.productData?.productId;
     const variantId = document.getElementById('variantId')?.value;
-    const quantity = document.getElementById('quantity')?.value || 1;
+    const quantity = parseInt(document.getElementById('quantity')?.value || 1);
     const selectedSize = document.querySelector('input[name="size"]:checked');
     const selectedColor = document.querySelector('input[name="color"]:checked');
     
     // Validation
     if (!productId) {
         showNotification('Product information missing', 'error');
+        console.error('Product ID not found');
         return;
     }
     
-    if (!selectedSize) {
+    // Check if sizes exist and if one is selected
+    const sizeOptions = document.querySelectorAll('input[name="size"]');
+    if (sizeOptions.length > 0 && !selectedSize) {
         showNotification(window.productData?.translations?.selectSize || 'Please select a size', 'warning');
-        // Highlight size selection
         document.querySelector('.size-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
     
-    if (window.productData?.hasColors === 'true' && !selectedColor) {
+    // Check if colors exist and if one is selected
+    const colorOptions = document.querySelectorAll('input[name="color"]');
+    if (colorOptions.length > 0 && !selectedColor) {
         showNotification(window.productData?.translations?.selectColor || 'Please select a color', 'warning');
-        // Highlight color selection
         document.querySelector('.color-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
     
-    if (!variantId) {
-        showNotification('Please select product options', 'warning');
-        return;
+    // Check variant ID
+    if (!variantId || variantId === '') {
+        // If no variant ID but also no options to select, there might be a default variant
+        if (window.productData?.defaultVariantId) {
+            document.getElementById('variantId').value = window.productData.defaultVariantId;
+        } else if (sizeOptions.length > 0 || colorOptions.length > 0) {
+            showNotification('Please select product options', 'warning');
+            return;
+        }
     }
     
-    // Prepare data for cart API
-    const cartData = {
-        product_id: productId,
-        variant_id: variantId,
-        quantity: quantity
-    };
-    
-    // Add to cart via API
-    fetch('/api.php?action=cart', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(cartData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Added to cart successfully!', 'success');
+    // Use the cart class if available
+    if (window.cart && window.cart.addItem) {
+        // Use cart class method
+        window.cart.addItem(productId, variantId || null, quantity);
+    } else {
+        // Fallback: Direct API call
+        showLoadingState();
+        
+        fetch('/api.php?action=cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                variant_id: variantId || null,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingState();
             
-            // Update cart count in header
-            updateCartCount(data.cart_count);
-            
-            // Open cart sidebar if available
-            if (window.cart && window.cart.openCartSidebar) {
-                setTimeout(() => {
-                    window.cart.openCartSidebar();
-                }, 500);
+            if (data.success) {
+                showNotification('Added to cart successfully!', 'success');
+                
+                // Update cart count
+                updateCartCount(data.cart_count || data.items?.length || 1);
+                
+                // Try to open cart sidebar
+                openCartSidebar();
+                
+                // Reload cart if cart object exists
+                if (window.cart && window.cart.loadCart) {
+                    window.cart.loadCart();
+                }
+            } else {
+                showNotification(data.message || 'Failed to add to cart', 'error');
             }
-        } else {
-            showNotification(data.message || 'Failed to add to cart', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error adding to cart:', error);
-        showNotification('Failed to add to cart. Please try again.', 'error');
-    });
+        })
+        .catch(error => {
+            hideLoadingState();
+            console.error('Error adding to cart:', error);
+            showNotification('Failed to add to cart. Please try again.', 'error');
+        });
+    }
+}
+
+function showLoadingState() {
+    const btn = document.querySelector('.btn-detail-cart');
+    if (btn) {
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.dataset.originalText = originalText;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    }
+}
+
+function hideLoadingState() {
+    const btn = document.querySelector('.btn-detail-cart');
+    if (btn && btn.dataset.originalText) {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.originalText;
+        delete btn.dataset.originalText;
+    }
 }
 
 function updateCartCount(count) {
-    const cartCount = document.getElementById('cartCount');
-    if (cartCount) {
+    const cartCountElements = document.querySelectorAll('#cartCount, .cart-count, .action-badge');
+    cartCountElements.forEach(element => {
         if (count > 0) {
-            cartCount.textContent = count;
-            cartCount.style.display = 'flex';
+            element.textContent = count;
+            element.style.display = 'flex';
         } else {
-            cartCount.style.display = 'none';
+            element.style.display = 'none';
+        }
+    });
+}
+
+function openCartSidebar() {
+    // Try cart class method first
+    if (window.cart && window.cart.openCartSidebar) {
+        window.cart.openCartSidebar();
+    } else {
+        // Manual implementation
+        const cartSidebar = document.getElementById('cartSidebar');
+        const cartOverlay = document.getElementById('cartOverlay');
+        
+        if (cartSidebar) {
+            cartSidebar.classList.add('active');
+            if (cartOverlay) {
+                cartOverlay.classList.add('active');
+            }
+            document.body.style.overflow = 'hidden';
         }
     }
 }
@@ -460,7 +529,7 @@ window.showSizeGuide = function() {
 };
 
 // ========================================
-// Share Buttons (Already in product.php)
+// Share Buttons
 // ========================================
 function initializeShareButtons() {
     // These functions are already defined in product.php inline script
@@ -501,9 +570,9 @@ function initializeShareButtons() {
 // Notification System
 // ========================================
 function showNotification(message, type = 'info') {
-    // Check if main.js notification is available
-    if (window.showNotification && window.showNotification !== showNotification) {
-        window.showNotification(message, type);
+    // Try to use cart's notification system first
+    if (window.cart && window.cart.showNotification) {
+        window.cart.showNotification(message, type);
         return;
     }
     
