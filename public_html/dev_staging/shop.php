@@ -4,7 +4,7 @@
  * Location: /public_html/dev_staging/shop.php
  * 
  * Main product catalog page with filtering, sorting, and pagination
- * Fixed: Category display and product counts
+ * Updated: Using reusable breadcrumb component
  */
 
 session_start();
@@ -175,6 +175,36 @@ $priceRange = $priceStmt->fetch();
 // Get total products count for "All Categories"
 $allProductsSql = "SELECT COUNT(*) FROM products WHERE is_active = 1";
 $allProductsCount = $pdo->query($allProductsSql)->fetchColumn();
+
+// Prepare breadcrumbs
+$breadcrumbs = [
+    ['title' => $lang['shop'] ?? 'Shop', 'url' => '/shop']
+];
+
+if ($currentCategory) {
+    // Check if it has a parent category
+    if ($currentCategory['parent_id']) {
+        $parentSql = "SELECT * FROM categories WHERE category_id = :parent_id";
+        $parentStmt = $pdo->prepare($parentSql);
+        $parentStmt->execute(['parent_id' => $currentCategory['parent_id']]);
+        $parentCategory = $parentStmt->fetch();
+        
+        if ($parentCategory) {
+            $parentName = $parentCategory['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $parentCategory['category_name'];
+            $breadcrumbs[] = [
+                'title' => $parentName,
+                'url' => '/shop?category=' . $parentCategory['slug']
+            ];
+        }
+    }
+    
+    // Add current category
+    $categoryName = $currentCategory['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $currentCategory['category_name'];
+    $breadcrumbs[] = [
+        'title' => $categoryName,
+        'url' => null // Current page
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLang ?>" dir="<?= $currentLang === 'ar' ? 'rtl' : 'ltr' ?>">
@@ -203,20 +233,8 @@ $allProductsCount = $pdo->query($allProductsSql)->fetchColumn();
     
     <?php include 'includes/components/header.php'; ?>
     
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-section">
-        <div class="container">
-            <nav class="breadcrumb">
-                <a href="/"><?= $lang['home'] ?? 'Home' ?></a>
-                <span class="separator">/</span>
-                <a href="/shop"><?= $lang['shop'] ?? 'Shop' ?></a>
-                <?php if ($currentCategory): ?>
-                <span class="separator">/</span>
-                <span class="current"><?= htmlspecialchars($currentCategory['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $currentCategory['category_name']) ?></span>
-                <?php endif; ?>
-            </nav>
-        </div>
-    </div>
+    <!-- Breadcrumb Component -->
+    <?php include 'includes/components/breadcrumb.php'; ?>
     
     <!-- Shop Section -->
     <section class="shop-section">
