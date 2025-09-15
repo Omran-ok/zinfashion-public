@@ -205,6 +205,20 @@ if ($currentCategory) {
         'url' => null // Current page
     ];
 }
+
+// Function to get translated badge name
+function getTranslatedBadgeName($badge, $lang) {
+    switch($badge) {
+        case 'new':
+            return $lang['new_arrivals'] ?? 'New Arrivals';
+        case 'sale':
+            return $lang['on_sale'] ?? 'On Sale';
+        case 'bestseller':
+            return $lang['bestsellers'] ?? 'Bestsellers';
+        default:
+            return ucfirst($badge);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLang ?>" dir="<?= $currentLang === 'ar' ? 'rtl' : 'ltr' ?>">
@@ -392,30 +406,37 @@ if ($currentCategory) {
                     <?php if ($search || $minPrice || $maxPrice || $badge || $categorySlug): ?>
                     <div class="active-filters">
                         <span><?= $lang['active_filters'] ?? 'Active Filters:' ?></span>
+                        
                         <?php if ($search): ?>
                         <span class="filter-tag">
                             <?= $lang['search'] ?? 'Search' ?>: <?= htmlspecialchars($search) ?>
                             <a href="?<?= http_build_query(array_diff_key($_GET, ['search' => ''])) ?>" class="remove-filter">×</a>
                         </span>
                         <?php endif; ?>
-                        <?php if ($categorySlug && $currentCategory): ?>
+                        
+                        <?php if ($categorySlug && $currentCategory): 
+                            $displayCategoryName = $currentCategory['category_name' . ($currentLang !== 'de' ? '_' . $currentLang : '')] ?? $currentCategory['category_name'];
+                        ?>
                         <span class="filter-tag">
-                            <?= htmlspecialchars($currentCategory['category_name']) ?>
+                            <?= $lang['category'] ?? 'Category' ?>: <?= htmlspecialchars($displayCategoryName) ?>
                             <a href="/shop" class="remove-filter">×</a>
                         </span>
                         <?php endif; ?>
+                        
                         <?php if ($minPrice || $maxPrice): ?>
                         <span class="filter-tag">
                             <?= $lang['price'] ?? 'Price' ?>: €<?= $minPrice ?: '0' ?> - €<?= $maxPrice ?: '∞' ?>
                             <a href="?<?= http_build_query(array_diff_key($_GET, ['min_price' => '', 'max_price' => ''])) ?>" class="remove-filter">×</a>
                         </span>
                         <?php endif; ?>
+                        
                         <?php if ($badge): ?>
                         <span class="filter-tag">
-                            <?= ucfirst($badge) ?>
+                            <?= getTranslatedBadgeName($badge, $lang) ?>
                             <a href="?<?= http_build_query(array_diff_key($_GET, ['badge' => ''])) ?>" class="remove-filter">×</a>
                         </span>
                         <?php endif; ?>
+                        
                         <a href="/shop" class="clear-all"><?= $lang['clear_all'] ?? 'Clear All' ?></a>
                     </div>
                     <?php endif; ?>
@@ -552,5 +573,37 @@ if ($currentCategory) {
     <script src="/assets/js/cart.js"></script>
     <script src="/assets/js/main.js"></script>
     <script src="/assets/js/shop.js"></script>
+    
+    <script>
+    // JavaScript function to apply price filter
+    function applyPriceFilter() {
+        const minPrice = document.getElementById('minPrice').value;
+        const maxPrice = document.getElementById('maxPrice').value;
+        const currentUrl = new URL(window.location.href);
+        
+        if (minPrice) {
+            currentUrl.searchParams.set('min_price', minPrice);
+        } else {
+            currentUrl.searchParams.delete('min_price');
+        }
+        
+        if (maxPrice) {
+            currentUrl.searchParams.set('max_price', maxPrice);
+        } else {
+            currentUrl.searchParams.delete('max_price');
+        }
+        
+        currentUrl.searchParams.set('page', '1'); // Reset to first page
+        window.location.href = currentUrl.toString();
+    }
+    
+    // JavaScript function to update sort
+    function updateSort(sortValue) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('sort', sortValue);
+        currentUrl.searchParams.set('page', '1'); // Reset to first page
+        window.location.href = currentUrl.toString();
+    }
+    </script>
 </body>
 </html>
