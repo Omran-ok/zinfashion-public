@@ -1,8 +1,21 @@
 /**
  * ZIN Fashion - Breadcrumb Component Styles
  * Location: /public_html/dev_staging/assets/css/breadcrumb.css
- * Standalone breadcrumb styles matching shop page design
+ * Version: 1.0.0 - Production Ready
+ * Features: Full RTL support, Dark/Light themes, Responsive design
  */
+
+/* ========================================
+   CSS Variables for Breadcrumb
+   ======================================== */
+:root {
+    --breadcrumb-height: 60px;
+    --breadcrumb-mobile-height: 50px;
+    --breadcrumb-font-size: 14px;
+    --breadcrumb-mobile-font-size: 12px;
+    --breadcrumb-separator-spacing: 8px;
+    --breadcrumb-item-spacing: 10px;
+}
 
 /* ========================================
    Breadcrumb Section
@@ -13,87 +26,197 @@
     border-bottom: 1px solid var(--border-color);
     position: relative;
     z-index: 10;
+    min-height: var(--breadcrumb-height);
+    display: flex;
+    align-items: center;
 }
 
+.breadcrumb-section .container {
+    width: 100%;
+}
+
+/* ========================================
+   Breadcrumb Navigation
+   ======================================== */
 .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: var(--breadcrumb-item-spacing);
+    font-size: var(--breadcrumb-font-size);
     flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
+/* ========================================
+   Breadcrumb Items
+   ======================================== */
 .breadcrumb-item {
     color: var(--text-secondary);
     transition: color 0.3s ease;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
 .breadcrumb a.breadcrumb-item {
     text-decoration: none;
+    color: var(--text-secondary);
 }
 
 .breadcrumb a.breadcrumb-item:hover {
     color: var(--gold-primary);
 }
 
-.breadcrumb .separator {
-    color: var(--text-muted);
-    margin: 0 5px;
-    font-size: 12px;
+.breadcrumb a.breadcrumb-item:focus {
+    outline: 2px solid var(--gold-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
+/* Current/Active Item */
 .breadcrumb .current {
     color: var(--gold-primary);
     font-weight: 500;
+    cursor: default;
 }
+
+/* ========================================
+   Separator
+   ======================================== */
+.breadcrumb .separator {
+    color: var(--text-muted);
+    margin: 0 var(--breadcrumb-separator-spacing);
+    font-size: 12px;
+    user-select: none;
+    display: inline-block;
+}
+
+/* ========================================
+   RTL Support for Arabic
+   ======================================== */
+html[dir="rtl"] .breadcrumb-section {
+    direction: rtl;
+}
+
+html[dir="rtl"] .breadcrumb-section .container {
+    direction: rtl;
+}
+
+html[dir="rtl"] .breadcrumb {
+    direction: rtl;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+html[dir="rtl"] .breadcrumb-item {
+    direction: rtl;
+}
+
+/* RTL Separator - Using backslash */
+html[dir="rtl"] .breadcrumb .separator {
+    font-size: 0;
+    margin: 0 var(--breadcrumb-separator-spacing);
+}
+
+html[dir="rtl"] .breadcrumb .separator::before {
+    content: "\\";
+    font-size: 12px;
+    color: var(--text-muted);
+    display: inline-block;
+}
+
+/* Alternative RTL separator using arrow */
+/*
+html[dir="rtl"] .breadcrumb .separator::before {
+    content: "←";
+    font-size: 14px;
+}
+*/
 
 /* ========================================
    Dark Theme Support
    ======================================== */
 body.theme-dark .breadcrumb-section {
-    background: var(--bg-secondary);
-    border-bottom-color: var(--border-color);
+    background: #1a1a1a;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.theme-dark .breadcrumb-item {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+body.theme-dark .breadcrumb a.breadcrumb-item:hover {
+    color: var(--gold-primary);
+}
+
+body.theme-dark .breadcrumb .current {
+    color: var(--gold-primary);
+}
+
+body.theme-dark .breadcrumb .separator,
+body.theme-dark .breadcrumb .separator::before {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 /* ========================================
    Light Theme Support
    ======================================== */
 body.theme-light .breadcrumb-section {
-    background: var(--bg-secondary);
-    border-bottom-color: var(--border-color);
+    background: #f8f9fa;
+    border-bottom-color: #e9ecef;
 }
 
-body.theme-light .breadcrumb a {
-    color: var(--text-secondary);
+body.theme-light .breadcrumb-item {
+    color: #6c757d;
 }
 
-body.theme-light .breadcrumb a:hover {
+body.theme-light .breadcrumb a.breadcrumb-item:hover {
     color: var(--gold-primary);
-}
-
-body.theme-light .breadcrumb .separator {
-    color: var(--text-muted);
 }
 
 body.theme-light .breadcrumb .current {
     color: var(--gold-primary);
 }
 
-/* ========================================
-   RTL Support
-   ======================================== */
-html[dir="rtl"] .breadcrumb {
-    flex-direction: row-reverse;
+body.theme-light .breadcrumb .separator,
+body.theme-light .breadcrumb .separator::before {
+    color: #adb5bd;
 }
 
-html[dir="rtl"] .breadcrumb .separator {
-    transform: scaleX(-1);
+/* ========================================
+   Accessibility Enhancements
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+    .breadcrumb-item {
+        transition: none;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .breadcrumb a.breadcrumb-item {
+        text-decoration: underline;
+    }
+    
+    .breadcrumb .current {
+        font-weight: 700;
+        text-decoration: none;
+    }
 }
 
 /* ========================================
    Mobile Responsive
    ======================================== */
+@media (max-width: 992px) {
+    .breadcrumb-section {
+        min-height: var(--breadcrumb-mobile-height);
+        padding: 18px 0;
+    }
+}
+
 @media (max-width: 767px) {
     .breadcrumb-section {
         padding: 15px 0;
@@ -105,26 +228,165 @@ html[dir="rtl"] .breadcrumb .separator {
     }
     
     .breadcrumb .separator {
-        margin: 0 3px;
+        margin: 0 5px;
+    }
+    
+    /* RTL mobile adjustments */
+    html[dir="rtl"] .breadcrumb .separator {
+        margin: 0 5px;
+    }
+    
+    html[dir="rtl"] .breadcrumb .separator::before {
+        font-size: 11px;
     }
 }
 
 @media (max-width: 575px) {
     .breadcrumb-section {
         padding: 12px 0;
+        min-height: auto;
     }
     
     .breadcrumb {
-        font-size: 12px;
+        font-size: var(--breadcrumb-mobile-font-size);
         gap: 6px;
     }
     
-    /* Hide intermediate breadcrumbs on very small screens */
-    .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) {
-        display: none;
+    /* Truncate long breadcrumb items on mobile */
+    .breadcrumb-item {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
-    .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) + .separator {
-        display: none;
+    /* Always show first and last items */
+    .breadcrumb-item:first-child,
+    .breadcrumb-item:last-child {
+        max-width: none;
     }
+    
+    /* Hide intermediate breadcrumbs on very small screens */
+    @media (max-width: 400px) {
+        .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) {
+            display: none;
+        }
+        
+        .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) + .separator {
+            display: none;
+        }
+        
+        /* RTL: Hide intermediate items */
+        html[dir="rtl"] .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) {
+            display: none;
+        }
+        
+        html[dir="rtl"] .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) + .separator {
+            display: none;
+        }
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+@media print {
+    .breadcrumb-section {
+        background: white;
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+    }
+    
+    .breadcrumb-item {
+        color: #333;
+    }
+    
+    .breadcrumb .separator {
+        color: #666;
+    }
+    
+    .breadcrumb .current {
+        color: #000;
+        font-weight: bold;
+    }
+}
+
+/* ========================================
+   Schema.org Microdata Support
+   ======================================== */
+.breadcrumb[itemscope] {
+    /* Ensures proper spacing for SEO microdata */
+    min-height: 20px;
+}
+
+.breadcrumb-item[itemprop="name"] {
+    /* Ensures text is readable by search engines */
+    font-size: inherit;
+}
+
+/* ========================================
+   Loading State (Optional)
+   ======================================== */
+.breadcrumb.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.breadcrumb.loading::after {
+    content: "...";
+    animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+    0%, 20% { content: "."; }
+    40% { content: ".."; }
+    60%, 100% { content: "..."; }
+}
+
+/* ========================================
+   Custom Breadcrumb Variations
+   ======================================== */
+
+/* Compact Version */
+.breadcrumb.breadcrumb-compact {
+    font-size: 12px;
+    gap: 6px;
+}
+
+.breadcrumb.breadcrumb-compact .separator {
+    margin: 0 4px;
+    font-size: 10px;
+}
+
+/* Large Version */
+.breadcrumb.breadcrumb-large {
+    font-size: 16px;
+    gap: 12px;
+}
+
+.breadcrumb.breadcrumb-large .separator {
+    margin: 0 10px;
+    font-size: 14px;
+}
+
+/* Centered Version */
+.breadcrumb-section.breadcrumb-centered .breadcrumb {
+    justify-content: center;
+}
+
+html[dir="rtl"] .breadcrumb-section.breadcrumb-centered .breadcrumb {
+    justify-content: center;
+}
+
+/* ========================================
+   Performance Optimizations
+   ======================================== */
+.breadcrumb {
+    /* Optimize rendering */
+    will-change: contents;
+    contain: layout style;
+}
+
+.breadcrumb-item {
+    /* Prevent layout shift */
+    min-height: 1em;
 }
