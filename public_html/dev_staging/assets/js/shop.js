@@ -2,7 +2,6 @@
  * ZIN Fashion - Shop Page JavaScript (Simplified)
  * Location: /public_html/dev_staging/assets/js/shop.js
  * Uses quick view and cart functions from main.js
- * IMPORTANT: No duplicate event handlers for cart/wishlist/quick-view
  */
 
 // ========================================
