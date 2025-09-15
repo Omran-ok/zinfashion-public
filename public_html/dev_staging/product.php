@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Product Detail Page
  * Location: /public_html/dev_staging/product.php
- * Updated: Fixed window.productData and add to cart functionality
+ * Updated: Fixed category display to show actual product category instead of parent
  */
 
 session_start();
@@ -20,13 +20,19 @@ if (!$productSlug) {
 }
 
 // Get product details with all translations
+// Updated query to get both the direct category and parent category info
 $productSql = "SELECT p.*, 
                c.category_id, c.category_name, c.category_name_en, c.category_name_ar, c.slug as category_slug, c.parent_id,
+               pc.category_name as parent_category_name, 
+               pc.category_name_en as parent_category_name_en, 
+               pc.category_name_ar as parent_category_name_ar,
+               pc.slug as parent_category_slug,
                sg.group_name, sg.group_name_en, sg.group_name_ar,
                (SELECT COUNT(*) FROM product_reviews pr WHERE pr.product_id = p.product_id AND pr.is_approved = 1) as review_count,
                (SELECT AVG(rating) FROM product_reviews pr WHERE pr.product_id = p.product_id AND pr.is_approved = 1) as avg_rating
                FROM products p
                LEFT JOIN categories c ON p.category_id = c.category_id
+               LEFT JOIN categories pc ON c.parent_id = pc.category_id
                LEFT JOIN size_groups sg ON p.size_group_id = sg.size_group_id
                WHERE p.product_slug = :slug AND p.is_active = 1";
 
@@ -37,15 +43,6 @@ $product = $stmt->fetch();
 if (!$product) {
     header('Location: /shop');
     exit;
-}
-
-// Get parent category if exists
-$parentCategory = null;
-if ($product['parent_id']) {
-    $parentSql = "SELECT * FROM categories WHERE category_id = :parent_id";
-    $parentStmt = $pdo->prepare($parentSql);
-    $parentStmt->execute(['parent_id' => $product['parent_id']]);
-    $parentCategory = $parentStmt->fetch();
 }
 
 // Get product images
@@ -152,18 +149,21 @@ $reviews = $reviewsStmt->fetchAll();
 // Get translated content
 $productName = $product['product_name'];
 $productDescription = $product['description'];
-$categoryName = $product['category_name'];
+$productCategoryName = $product['category_name'];  // This is the actual category (e.g., "Nachthemden")
+$productParentCategoryName = $product['parent_category_name'];  // This is the parent (e.g., "Damen")
 $sizeGroupName = $product['group_name'];
 
 if ($currentLang === 'en') {
     if ($product['product_name_en']) $productName = $product['product_name_en'];
     if ($product['description_en']) $productDescription = $product['description_en'];
     if ($product['category_name_en']) $categoryName = $product['category_name_en'];
+    if ($product['parent_category_name_en']) $parentCategoryName = $product['parent_category_name_en'];
     if ($product['group_name_en']) $sizeGroupName = $product['group_name_en'];
 } elseif ($currentLang === 'ar') {
     if ($product['product_name_ar']) $productName = $product['product_name_ar'];
     if ($product['description_ar']) $productDescription = $product['description_ar'];
     if ($product['category_name_ar']) $categoryName = $product['category_name_ar'];
+    if ($product['parent_category_name_ar']) $parentCategoryName = $product['parent_category_name_ar'];
     if ($product['group_name_ar']) $sizeGroupName = $product['group_name_ar'];
 }
 
@@ -181,23 +181,16 @@ $breadcrumbs = [
 ];
 
 // Add parent category if exists
-if ($parentCategory) {
-    $parentName = $parentCategory['category_name'];
-    if ($currentLang === 'en' && $parentCategory['category_name_en']) {
-        $parentName = $parentCategory['category_name_en'];
-    } elseif ($currentLang === 'ar' && $parentCategory['category_name_ar']) {
-        $parentName = $parentCategory['category_name_ar'];
-    }
-    
+if ($product['parent_id'] && $productParentCategoryName) {
     $breadcrumbs[] = [
-        'title' => $parentName,
-        'url' => '/category/' . $parentCategory['slug']
+        'title' => $productParentCategoryName,
+        'url' => '/category/' . $product['parent_category_slug']
     ];
 }
 
-// Add product category
+// Add product's direct category
 $breadcrumbs[] = [
-    'title' => $categoryName,
+    'title' => $productCategoryName,
     'url' => '/category/' . $product['category_slug']
 ];
 
@@ -478,7 +471,7 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         </div>
                     </div>
                     
-                    <!-- Details Tab -->
+                    <!-- Details Tab - FIXED to show correct category -->
                     <div class="tab-pane" id="details">
                         <div class="content-wrapper">
                             <table class="details-table">
@@ -488,7 +481,12 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                                 </tr>
                                 <tr>
                                     <td><?= $lang['category'] ?? 'Category' ?>:</td>
-                                    <td><?= htmlspecialchars($categoryName) ?></td>
+                                    <td>
+                                        <?php if ($productParentCategoryName): ?>
+                                            <?= htmlspecialchars($productParentCategoryName) ?> / 
+                                        <?php endif; ?>
+                                        <?= htmlspecialchars($productCategoryName) ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><?= $lang['material'] ?? 'Material' ?>:</td>
