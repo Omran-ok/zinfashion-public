@@ -2,6 +2,7 @@
 /**
  * ZIN Fashion - Breadcrumb Component
  * Location: /public_html/dev_staging/includes/components/breadcrumb.php
+ * Updated: RTL support for Arabic
  * 
  * Usage:
  * $breadcrumbs = [
@@ -24,18 +25,22 @@ if (!isset($hideBreadcrumbHome) || !$hideBreadcrumbHome) {
         'url' => '/'
     ]);
 }
+
+// Check if we're in RTL mode
+$isRTL = (isset($currentLang) && $currentLang === 'ar');
 ?>
 
 <!-- Breadcrumb Section -->
 <div class="breadcrumb-section">
     <div class="container">
-        <nav class="breadcrumb" aria-label="<?= $lang['breadcrumb'] ?? 'Breadcrumb' ?>">
-            <?php foreach ($breadcrumbs as $index => $crumb): ?>
-                <?php 
+        <nav class="breadcrumb" aria-label="<?= $lang['breadcrumb'] ?? 'Breadcrumb' ?>" <?= $isRTL ? 'dir="rtl"' : '' ?>>
+            <?php 
+            // For RTL, we keep the same order but CSS will handle the visual presentation
+            foreach ($breadcrumbs as $index => $crumb): 
                 $isLast = ($index === count($breadcrumbs) - 1);
                 $title = $crumb['title'];
                 $url = $crumb['url'] ?? null;
-                ?>
+            ?>
                 
                 <?php if (!$isLast && $url): ?>
                     <a href="<?= htmlspecialchars($url) ?>" class="breadcrumb-item">
