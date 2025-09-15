@@ -4,7 +4,7 @@
  * Location: /public_html/dev_staging/shop.php
  * 
  * Main product catalog page with filtering, sorting, and pagination
- * Updated: Using reusable breadcrumb component
+ * Updated: Using independent breadcrumb.css
  */
 
 session_start();
@@ -222,9 +222,16 @@ if ($currentCategory) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Main Stylesheets -->
     <link rel="stylesheet" href="/assets/css/main.css">
     <link rel="stylesheet" href="/assets/css/responsive.css">
+    
+    <!-- Component Stylesheets -->
+    <link rel="stylesheet" href="/assets/css/breadcrumb.css">
     <link rel="stylesheet" href="/assets/css/shop.css">
+    
+    <!-- RTL Support -->
     <?php if ($currentLang === 'ar'): ?>
     <link rel="stylesheet" href="/assets/css/rtl.css">
     <?php endif; ?>
