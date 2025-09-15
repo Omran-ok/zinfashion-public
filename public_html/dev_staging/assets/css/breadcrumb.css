@@ -1,0 +1,130 @@
+/**
+ * ZIN Fashion - Breadcrumb Component Styles
+ * Location: /public_html/dev_staging/assets/css/breadcrumb.css
+ * Standalone breadcrumb styles matching shop page design
+ */
+
+/* ========================================
+   Breadcrumb Section
+   ======================================== */
+.breadcrumb-section {
+    background: var(--bg-secondary);
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    z-index: 10;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.breadcrumb a.breadcrumb-item {
+    text-decoration: none;
+}
+
+.breadcrumb a.breadcrumb-item:hover {
+    color: var(--gold-primary);
+}
+
+.breadcrumb .separator {
+    color: var(--text-muted);
+    margin: 0 5px;
+    font-size: 12px;
+}
+
+.breadcrumb .current {
+    color: var(--gold-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Dark Theme Support
+   ======================================== */
+body.theme-dark .breadcrumb-section {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+/* ========================================
+   Light Theme Support
+   ======================================== */
+body.theme-light .breadcrumb-section {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+body.theme-light .breadcrumb a {
+    color: var(--text-secondary);
+}
+
+body.theme-light .breadcrumb a:hover {
+    color: var(--gold-primary);
+}
+
+body.theme-light .breadcrumb .separator {
+    color: var(--text-muted);
+}
+
+body.theme-light .breadcrumb .current {
+    color: var(--gold-primary);
+}
+
+/* ========================================
+   RTL Support
+   ======================================== */
+html[dir="rtl"] .breadcrumb {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .breadcrumb .separator {
+    transform: scaleX(-1);
+}
+
+/* ========================================
+   Mobile Responsive
+   ======================================== */
+@media (max-width: 767px) {
+    .breadcrumb-section {
+        padding: 15px 0;
+    }
+    
+    .breadcrumb {
+        font-size: 13px;
+        gap: 8px;
+    }
+    
+    .breadcrumb .separator {
+        margin: 0 3px;
+    }
+}
+
+@media (max-width: 575px) {
+    .breadcrumb-section {
+        padding: 12px 0;
+    }
+    
+    .breadcrumb {
+        font-size: 12px;
+        gap: 6px;
+    }
+    
+    /* Hide intermediate breadcrumbs on very small screens */
+    .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) {
+        display: none;
+    }
+    
+    .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-last-child(2)) + .separator {
+        display: none;
+    }
+}
