@@ -362,5 +362,31 @@ $lang = [
     'home' => 'الرئيسية',
     'search' => 'بحث',
     'price' => 'السعر',
+    
+    // Product Page - Share Messages
+    'link_copied' => 'تم نسخ الرابط إلى الحافظة!',
+    'share_instagram' => 'تم نسخ الرابط! شاركه في قصص Instagram أو في ملفك الشخصي.',
+    'share_tiktok' => 'تم نسخ الرابط! شاركه على TikTok أو في ملفك الشخصي.',
+
+    // Product Page - Reviews
+    'verified_purchase' => 'عملية شراء موثقة',
+    'no_reviews_yet' => 'لا توجد تقييمات بعد. كن أول من يقيم هذا المنتج!',
+    'write_review' => 'اكتب تقييماً',
+    'helpful_review' => 'هل كان هذا التقييم مفيداً؟',
+    'review_helpful_count' => 'وجد {count} شخص هذا مفيداً',
+
+    // Product Page - How to Measure
+    'how_to_measure' => 'كيفية القياس',
+    'measure_tip_1' => 'استخدم شريط قياس مرن',
+    'measure_tip_2' => 'قف بشكل مستقيم ومسترخي',
+    'measure_tip_3' => 'للحصول على أفضل مقاس، قم بالقياس فوق الملابس الداخلية',
+    'measure_tip_4' => 'إذا كنت بين مقاسين، اختر المقاس الأكبر',
+
+    // Product Page - Details
+    'material' => 'الخامة',
+    'care_instructions' => 'تعليمات العناية',
+    'select_size' => 'الرجاء اختيار المقاس',
+    'select_color' => 'الرجاء اختيار اللون',
+    'only_left' => 'متبقي {count} فقط في المخزون!',
 ];
 ?>
