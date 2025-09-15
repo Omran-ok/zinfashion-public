@@ -276,5 +276,31 @@ $lang = [
     'home' => 'Startseite',
     'search' => 'Suche',
     'price' => 'Preis',
+    
+    // Product Page - Share Messages
+    'link_copied' => 'Link in die Zwischenablage kopiert!',
+    'share_instagram' => 'Link kopiert! Teilen Sie es in Ihren Instagram Stories oder in Ihrer Bio.',
+    'share_tiktok' => 'Link kopiert! Teilen Sie es auf TikTok oder in Ihrer Bio.',
+
+    // Product Page - Reviews
+    'verified_purchase' => 'Verifizierter Kauf',
+    'no_reviews_yet' => 'Noch keine Bewertungen. Seien Sie der Erste, der dieses Produkt bewertet!',
+    'write_review' => 'Bewertung schreiben',
+    'helpful_review' => 'War diese Bewertung hilfreich?',
+    'review_helpful_count' => '{count} Personen fanden dies hilfreich',
+
+    // Product Page - How to Measure
+    'how_to_measure' => 'Wie man misst',
+    'measure_tip_1' => 'Verwenden Sie ein flexibles Maßband',
+    'measure_tip_2' => 'Stehen Sie gerade und entspannt',
+    'measure_tip_3' => 'Für beste Passform, messen Sie über Unterwäsche',
+    'measure_tip_4' => 'Bei Zwischengrößen wählen Sie die größere Größe',
+
+    // Product Page - Details
+    'material' => 'Material',
+    'care_instructions' => 'Pflegehinweise',
+    'select_size' => 'Bitte wählen Sie eine Größe',
+    'select_color' => 'Bitte wählen Sie eine Farbe',
+    'only_left' => 'Nur noch {count} auf Lager!',
 ];
 ?>
