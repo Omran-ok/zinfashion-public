@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Product Detail Page
  * Location: /public_html/dev_staging/product.php
- * Updated: Fixed button classes to avoid conflicts with main.css
+ * Updated: Fixed window.productData and add to cart functionality
  */
 
 session_start();
@@ -62,8 +62,6 @@ $variantsSql = "SELECT pv.*, s.size_name, s.size_order, s.measurements, c.color_
                 WHERE pv.product_id = :product_id 
                 AND pv.is_available = 1
                 AND s.is_active = 1
-                AND s.measurements IS NOT NULL
-                AND s.measurements != ''
                 ORDER BY s.size_order, c.color_name";
 
 $variantsStmt = $pdo->prepare($variantsSql);
@@ -81,7 +79,8 @@ foreach ($variants as $variant) {
         $sizes[$variant['size_id']] = [
             'name' => $variant['size_name'],
             'order' => $variant['size_order'],
-            'measurements' => json_decode($variant['measurements'], true)
+            'measurements' => json_decode($variant['measurements'], true),
+            'stock' => $variant['stock_quantity']
         ];
     }
     
@@ -113,6 +112,12 @@ foreach ($variants as $variant) {
 uasort($sizes, function($a, $b) {
     return $a['order'] - $b['order'];
 });
+
+// Get first available variant if no colors
+$defaultVariantId = null;
+if (empty($colors) && !empty($variants)) {
+    $defaultVariantId = $variants[0]['variant_id'];
+}
 
 // Get related products with proper image and category info
 $relatedSql = "SELECT p.*, pi.image_url,
@@ -317,8 +322,8 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                     </div>
                     
                     <form id="productForm" class="product-options">
-                        <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
-                        <input type="hidden" name="variant_id" id="variantId" value="">
+                        <input type="hidden" name="product_id" id="productId" value="<?= $product['product_id'] ?>">
+                        <input type="hidden" name="variant_id" id="variantId" value="<?= $defaultVariantId ?>">
                         
                         <?php if (!empty($colors)): ?>
                         <div class="option-group">
@@ -343,12 +348,22 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                                 <i class="fas fa-ruler"></i> <?= $lang['size_guide'] ?? 'Size Guide' ?>
                             </button>
                             <div class="size-options" id="size-selection">
-                                <?php foreach ($sizes as $sizeId => $size): ?>
+                                <?php 
+                                $firstSize = true;
+                                foreach ($sizes as $sizeId => $size): 
+                                    $isDisabled = isset($size['stock']) && $size['stock'] <= 0;
+                                ?>
                                 <label class="size-option">
-                                    <input type="radio" name="size" value="<?= $sizeId ?>" required>
+                                    <input type="radio" name="size" value="<?= $sizeId ?>" 
+                                           <?= $firstSize && !$isDisabled ? 'checked' : '' ?>
+                                           <?= $isDisabled ? 'disabled' : '' ?> 
+                                           required>
                                     <span class="size-label"><?= htmlspecialchars($size['name']) ?></span>
                                 </label>
-                                <?php endforeach; ?>
+                                <?php 
+                                    if (!$isDisabled) $firstSize = false;
+                                endforeach; 
+                                ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -358,7 +373,7 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                             <label for="quantity"><?= $lang['quantity'] ?? 'Quantity' ?>:</label>
                             <div class="quantity-selector">
                                 <button type="button" class="qty-btn minus" onclick="updateQuantity(-1)">-</button>
-                                    <input type="number" name="quantity" id="quantity" value="1" min="1" max="99" readonly>
+                                <input type="number" name="quantity" id="quantity" value="1" min="1" max="99" readonly>
                                 <button type="button" class="qty-btn plus" onclick="updateQuantity(1)">+</button>
                             </div>
                         </div>
@@ -366,7 +381,8 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         <!-- Action Buttons -->
                         <div class="product-detail-actions">
                             <button type="submit" class="btn-detail-cart" <?= !$inStock ? 'disabled' : '' ?>>
-                                <i class="fas fa-shopping-cart"></i> <?= $lang['add_to_cart'] ?? 'Add to Cart' ?>
+                                <i class="fas fa-shopping-cart"></i> 
+                                <span id="addToCartText"><?= $lang['add_to_cart'] ?? 'Add to Cart' ?></span>
                             </button>
                             <button type="button" class="btn-detail-wishlist" data-product-id="<?= $product['product_id'] ?>">
                                 <i class="far fa-heart"></i>
@@ -660,60 +676,82 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
     
     <?php include 'includes/components/footer.php'; ?>
     
-    <!-- JavaScript Data -->
+    <!-- JavaScript Data - FIXED: Using window.productData -->
     <script>
-        const productData = {
+        // Make productData globally available
+        window.productData = {
             productId: <?= $product['product_id'] ?>,
             productName: '<?= addslashes($productName) ?>',
             productUrl: '<?= addslashes($productUrl) ?>',
             basePrice: <?= $price ?>,
             variantMap: <?= json_encode($variantMap) ?>,
             hasColors: <?= !empty($colors) ? 'true' : 'false' ?>,
+            defaultVariantId: <?= $defaultVariantId ?: 'null' ?>,
             translations: {
                 selectSize: '<?= addslashes($lang['select_size'] ?? 'Please select a size') ?>',
                 selectColor: '<?= addslashes($lang['select_color'] ?? 'Please select a color') ?>',
                 inStock: '<?= addslashes($lang['in_stock'] ?? 'In Stock') ?>',
                 outOfStock: '<?= addslashes($lang['out_of_stock'] ?? 'Out of Stock') ?>',
                 onlyLeft: '<?= addslashes($lang['only_left'] ?? 'Only {count} left') ?>',
+                addToCart: '<?= addslashes($lang['add_to_cart'] ?? 'Add to Cart') ?>',
                 linkCopied: '<?= addslashes($lang['link_copied'] ?? 'Link copied to clipboard!') ?>',
                 shareInstagram: '<?= addslashes($lang['share_instagram'] ?? 'Link copied! Share it on Instagram Stories or in your bio.') ?>',
                 shareTikTok: '<?= addslashes($lang['share_tiktok'] ?? 'Link copied! Share it on TikTok or in your bio.') ?>'
             }
         };
         
+        // Check if user is logged in
+        window.isLoggedIn = <?= isLoggedIn() ? 'true' : 'false' ?>;
+        
         // Social sharing functions
         function copyProductLink() {
-            navigator.clipboard.writeText(productData.productUrl).then(() => {
-                showNotification(productData.translations.linkCopied, 'success');
+            navigator.clipboard.writeText(window.productData.productUrl).then(() => {
+                if (window.showNotification) {
+                    window.showNotification(window.productData.translations.linkCopied, 'success');
+                }
             }).catch(() => {
                 // Fallback for older browsers
                 const input = document.createElement('input');
-                input.value = productData.productUrl;
+                input.value = window.productData.productUrl;
                 document.body.appendChild(input);
                 input.select();
                 document.execCommand('copy');
                 document.body.removeChild(input);
-                showNotification(productData.translations.linkCopied, 'success');
+                if (window.showNotification) {
+                    window.showNotification(window.productData.translations.linkCopied, 'success');
+                }
             });
         }
         
         function shareInstagram() {
-            // Copy link first
             copyProductLink();
-            // Show special message for Instagram
             setTimeout(() => {
-                showNotification(productData.translations.shareInstagram, 'info');
+                if (window.showNotification) {
+                    window.showNotification(window.productData.translations.shareInstagram, 'info');
+                }
             }, 1500);
         }
         
         function shareTikTok() {
-            // Copy link first
             copyProductLink();
-            // Show special message for TikTok
             setTimeout(() => {
-                showNotification(productData.translations.shareTikTok, 'info');
+                if (window.showNotification) {
+                    window.showNotification(window.productData.translations.shareTikTok, 'info');
+                }
             }, 1500);
         }
+        
+        // Initialize variant selection if no colors (single variant products)
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (empty($colors) && !empty($sizes)): ?>
+            // Trigger variant update for the first selected size
+            const firstSize = document.querySelector('input[name="size"]:checked');
+            if (firstSize) {
+                const event = new Event('change');
+                firstSize.dispatchEvent(event);
+            }
+            <?php endif; ?>
+        });
     </script>
     
     <!-- Scripts -->
