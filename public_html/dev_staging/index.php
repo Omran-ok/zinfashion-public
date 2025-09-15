@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Homepage
  * Location: /public_html/dev_staging/index.php
- * Updated: Fixed category name translations in product cards
+ * Updated: Fixed category count to include subcategory products
  */
 
 session_start();
@@ -33,9 +33,15 @@ $featuredSql = "SELECT p.*, pi.image_url,
 $featuredStmt = $pdo->query($featuredSql);
 $featuredProducts = $featuredStmt->fetchAll();
 
-// Get main categories with product count
+// Get main categories with product count including subcategories
 $categoriesSql = "SELECT c.*, 
-                  (SELECT COUNT(*) FROM products p WHERE p.category_id = c.category_id AND p.is_active = 1) as product_count
+                  (
+                    SELECT COUNT(DISTINCT p.product_id) 
+                    FROM products p 
+                    LEFT JOIN categories sub ON p.category_id = sub.category_id
+                    WHERE p.is_active = 1 
+                    AND (p.category_id = c.category_id OR sub.parent_id = c.category_id)
+                  ) as product_count
                   FROM categories c
                   WHERE c.parent_id IS NULL AND c.is_active = 1
                   ORDER BY c.display_order";
