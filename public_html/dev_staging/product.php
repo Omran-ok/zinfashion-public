@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Product Detail Page
  * Location: /public_html/dev_staging/product.php
- * Updated: Using breadcrumb component, matching shop page styles, complete social sharing
+ * Updated: Fixed button classes to avoid conflicts with main.css
  */
 
 session_start();
@@ -322,8 +322,8 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         
                         <?php if (!empty($colors)): ?>
                         <div class="option-group">
-                            <label><?= $lang['color'] ?? 'Color' ?>:</label>
-                            <div class="color-options">
+                            <label for="color-selection"><?= $lang['color'] ?? 'Color' ?>:</label>
+                            <div class="color-options" id="color-selection">
                                 <?php foreach ($colors as $colorId => $color): ?>
                                 <label class="color-option">
                                     <input type="radio" name="color" value="<?= $colorId ?>" required>
@@ -338,11 +338,11 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         
                         <?php if (!empty($sizes)): ?>
                         <div class="option-group">
-                            <label><?= $lang['size'] ?? 'Size' ?>:</label>
+                            <label for="size-selection"><?= $lang['size'] ?? 'Size' ?>:</label>
                             <button type="button" class="size-guide-link" onclick="showSizeGuide()">
                                 <i class="fas fa-ruler"></i> <?= $lang['size_guide'] ?? 'Size Guide' ?>
                             </button>
-                            <div class="size-options">
+                            <div class="size-options" id="size-selection">
                                 <?php foreach ($sizes as $sizeId => $size): ?>
                                 <label class="size-option">
                                     <input type="radio" name="size" value="<?= $sizeId ?>" required>
@@ -353,15 +353,27 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         </div>
                         <?php endif; ?>
                         
-                        <div class="option-group">
-                            <label><?= $lang['quantity'] ?? 'Quantity' ?>:</label>
+                        <!-- Quantity Section -->
+                        <div class="quantity-section">
+                            <label for="quantity"><?= $lang['quantity'] ?? 'Quantity' ?>:</label>
                             <div class="quantity-selector">
                                 <button type="button" class="qty-btn minus" onclick="updateQuantity(-1)">-</button>
-                                <input type="number" name="quantity" id="quantity" value="1" min="1" max="99" readonly>
+                                    <input type="number" name="quantity" id="quantity" value="1" min="1" max="99" readonly>
                                 <button type="button" class="qty-btn plus" onclick="updateQuantity(1)">+</button>
                             </div>
                         </div>
+
+                        <!-- Action Buttons -->
+                        <div class="product-detail-actions">
+                            <button type="submit" class="btn-detail-cart" <?= !$inStock ? 'disabled' : '' ?>>
+                                <i class="fas fa-shopping-cart"></i> <?= $lang['add_to_cart'] ?? 'Add to Cart' ?>
+                            </button>
+                            <button type="button" class="btn-detail-wishlist" data-product-id="<?= $product['product_id'] ?>">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
                         
+                        <!-- Stock Info - Separate -->
                         <div class="stock-info">
                             <?php if ($inStock): ?>
                             <span class="in-stock"><i class="fas fa-check-circle"></i> <?= $lang['in_stock'] ?? 'In Stock' ?></span>
@@ -369,15 +381,6 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                             <?php else: ?>
                             <span class="out-of-stock"><i class="fas fa-times-circle"></i> <?= $lang['out_of_stock'] ?? 'Out of Stock' ?></span>
                             <?php endif; ?>
-                        </div>
-                        
-                        <div class="product-actions">
-                            <button type="submit" class="btn btn-primary btn-large btn-add-to-cart" <?= !$inStock ? 'disabled' : '' ?>>
-                                <i class="fas fa-shopping-cart"></i> <?= $lang['add_to_cart'] ?? 'Add to Cart' ?>
-                            </button>
-                            <button type="button" class="btn btn-outline btn-icon add-to-wishlist" data-product-id="<?= $product['product_id'] ?>">
-                                <i class="far fa-heart"></i>
-                            </button>
                         </div>
                     </form>
                     
