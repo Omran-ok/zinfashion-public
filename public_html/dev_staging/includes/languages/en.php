@@ -333,5 +333,31 @@ $lang = [
     'home' => 'Home',
     'search' => 'Search',
     'price' => 'Price',
+    
+    // Product Page - Share Messages
+    'link_copied' => 'Link copied to clipboard!',
+    'share_instagram' => 'Link copied! Share it on Instagram Stories or in your bio.',
+    'share_tiktok' => 'Link copied! Share it on TikTok or in your bio.',
+
+    // Product Page - Reviews
+    'verified_purchase' => 'Verified Purchase',
+    'no_reviews_yet' => 'No reviews yet. Be the first to review this product!',
+    'write_review' => 'Write a Review',
+    'helpful_review' => 'Was this review helpful?',
+    'review_helpful_count' => '{count} people found this helpful',
+
+    // Product Page - How to Measure
+    'how_to_measure' => 'How to Measure',
+    'measure_tip_1' => 'Use a flexible measuring tape',
+    'measure_tip_2' => 'Stand straight and relaxed',
+    'measure_tip_3' => 'For best fit, measure over undergarments',
+    'measure_tip_4' => 'If between sizes, choose the larger size',
+
+    // Product Page - Details
+    'material' => 'Material',
+    'care_instructions' => 'Care Instructions',
+    'select_size' => 'Please select a size',
+    'select_color' => 'Please select a color',
+    'only_left' => 'Only {count} left in stock!',
 ];
 ?>
