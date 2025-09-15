@@ -2,7 +2,7 @@
 /**
  * ZIN Fashion - Product Detail Page
  * Location: /public_html/dev_staging/product.php
- * Updated: Fixed category display to show actual product category instead of parent
+ * Updated: Full translation support for categories and review sections
  */
 
 session_start();
@@ -146,24 +146,25 @@ $reviewsStmt = $pdo->prepare($reviewsSql);
 $reviewsStmt->execute(['product_id' => $product['product_id']]);
 $reviews = $reviewsStmt->fetchAll();
 
-// Get translated content
+// Get translated content with proper fallbacks
 $productName = $product['product_name'];
 $productDescription = $product['description'];
-$productCategoryName = $product['category_name'];  // This is the actual category (e.g., "Nachthemden")
-$productParentCategoryName = $product['parent_category_name'];  // This is the parent (e.g., "Damen")
+$productCategoryName = $product['category_name'];
+$productParentCategoryName = $product['parent_category_name'];
 $sizeGroupName = $product['group_name'];
 
+// Apply translations based on current language
 if ($currentLang === 'en') {
     if ($product['product_name_en']) $productName = $product['product_name_en'];
     if ($product['description_en']) $productDescription = $product['description_en'];
-    if ($product['category_name_en']) $categoryName = $product['category_name_en'];
-    if ($product['parent_category_name_en']) $parentCategoryName = $product['parent_category_name_en'];
+    if ($product['category_name_en']) $productCategoryName = $product['category_name_en'];
+    if ($product['parent_category_name_en']) $productParentCategoryName = $product['parent_category_name_en'];
     if ($product['group_name_en']) $sizeGroupName = $product['group_name_en'];
 } elseif ($currentLang === 'ar') {
     if ($product['product_name_ar']) $productName = $product['product_name_ar'];
     if ($product['description_ar']) $productDescription = $product['description_ar'];
-    if ($product['category_name_ar']) $categoryName = $product['category_name_ar'];
-    if ($product['parent_category_name_ar']) $parentCategoryName = $product['parent_category_name_ar'];
+    if ($product['category_name_ar']) $productCategoryName = $product['category_name_ar'];
+    if ($product['parent_category_name_ar']) $productParentCategoryName = $product['parent_category_name_ar'];
     if ($product['group_name_ar']) $sizeGroupName = $product['group_name_ar'];
 }
 
@@ -175,7 +176,7 @@ $discountPercent = $hasDiscount ? round((($product['base_price'] - $product['sal
 // Check overall stock
 $inStock = count($variants) > 0 && array_sum(array_column($variants, 'stock_quantity')) > 0;
 
-// Prepare breadcrumbs
+// Prepare breadcrumbs with translated names
 $breadcrumbs = [
     ['title' => $lang['shop'] ?? 'Shop', 'url' => '/shop']
 ];
@@ -202,6 +203,61 @@ $breadcrumbs[] = [
 
 // Generate full product URL for sharing
 $productUrl = SITE_URL . '/product/' . $productSlug;
+
+// Function to translate measurement keys
+function translateMeasurementKey($key, $lang) {
+    $translations = [
+        'leg_width' => [
+            'de' => 'Beinbreite',
+            'en' => 'Leg Width',
+            'ar' => 'عرض الساق'
+        ],
+        'weight_min' => [
+            'de' => 'Min. Gewicht',
+            'en' => 'Min. Weight',
+            'ar' => 'الوزن الأدنى'
+        ],
+        'weight_max' => [
+            'de' => 'Max. Gewicht',
+            'en' => 'Max. Weight',
+            'ar' => 'الوزن الأقصى'
+        ],
+        'chest_width' => [
+            'de' => 'Brustbreite',
+            'en' => 'Chest Width',
+            'ar' => 'عرض الصدر'
+        ],
+        'waist' => [
+            'de' => 'Taille',
+            'en' => 'Waist',
+            'ar' => 'الخصر'
+        ],
+        'hip' => [
+            'de' => 'Hüfte',
+            'en' => 'Hip',
+            'ar' => 'الورك'
+        ],
+        'length' => [
+            'de' => 'Länge',
+            'en' => 'Length',
+            'ar' => 'الطول'
+        ],
+        'age' => [
+            'de' => 'Alter',
+            'en' => 'Age',
+            'ar' => 'العمر'
+        ]
+    ];
+    
+    $langCode = isset($lang['language_code']) ? $lang['language_code'] : 'en';
+    
+    if (isset($translations[$key][$langCode])) {
+        return $translations[$key][$langCode];
+    }
+    
+    // Fallback: capitalize and replace underscores
+    return ucfirst(str_replace('_', ' ', $key));
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLang ?>" dir="<?= $currentLang === 'ar' ? 'rtl' : 'ltr' ?>">
@@ -471,7 +527,7 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                         </div>
                     </div>
                     
-                    <!-- Details Tab - FIXED to show correct category -->
+                    <!-- Details Tab - FIXED to show correct translated category -->
                     <div class="tab-pane" id="details">
                         <div class="content-wrapper">
                             <table class="details-table">
@@ -516,9 +572,10 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
                                             // Get measurement keys from first size
                                             $firstSize = reset($sizes);
                                             $measurementKeys = $firstSize['measurements'] ? array_keys($firstSize['measurements']) : [];
+                                            $lang['language_code'] = $currentLang; // Add language code for translation function
                                             foreach ($measurementKeys as $key): 
                                             ?>
-                                            <th><?= ucfirst(str_replace('_', ' ', $key)) ?></th>
+                                            <th><?= translateMeasurementKey($key, $lang) ?></th>
                                             <?php endforeach; ?>
                                         </tr>
                                     </thead>
@@ -674,7 +731,7 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
     
     <?php include 'includes/components/footer.php'; ?>
     
-    <!-- JavaScript Data - FIXED: Using window.productData -->
+    <!-- JavaScript Data -->
     <script>
         // Make productData globally available
         window.productData = {
@@ -700,6 +757,23 @@ $productUrl = SITE_URL . '/product/' . $productSlug;
         
         // Check if user is logged in
         window.isLoggedIn = <?= isLoggedIn() ? 'true' : 'false' ?>;
+        
+        // Quantity update function
+        function updateQuantity(change) {
+            const input = document.getElementById('quantity');
+            let value = parseInt(input.value) || 1;
+            value = Math.max(1, Math.min(99, value + change));
+            input.value = value;
+        }
+        
+        // Size guide modal function
+        function showSizeGuide() {
+            const sizeGuideTab = document.querySelector('[data-tab="size-guide"]');
+            if (sizeGuideTab) {
+                sizeGuideTab.click();
+                document.getElementById('size-guide').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
         
         // Social sharing functions
         function copyProductLink() {
