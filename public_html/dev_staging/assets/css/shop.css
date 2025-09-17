@@ -1,42 +1,8 @@
 /**
  * ZIN Fashion - Shop Page Styles (Production Ready)
  * Location: /public_html/dev_staging/assets/css/shop.css
- * Updated: Removed product card styles to use main.css
+ * Updated: Breadcrumb styles moved to independent breadcrumb.css file
  */
-
-/* ========================================
-   Breadcrumb
-   ======================================== */
-.breadcrumb-section {
-    background: var(--bg-secondary);
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-}
-
-.breadcrumb a {
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
-}
-
-.breadcrumb a:hover {
-    color: var(--gold-primary);
-}
-
-.breadcrumb .separator {
-    color: var(--text-muted);
-}
-
-.breadcrumb .current {
-    color: var(--gold-primary);
-    font-weight: 500;
-}
 
 /* ========================================
    Shop Layout
